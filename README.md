@@ -10,23 +10,25 @@ Select images in the Media Library, choose the bulk action, and the plugin creat
 
 ```
 title.ext                              -> Title only
-type--title.ext                        -> Type + Title
-type--title--breed.tag1.tag2.ext       -> Type + Title + Breed + Tags
+type__title.ext                        -> Type + Title
+type__title__breed.tag1.tag2.ext       -> Type + Title + Breed + Tags
 ```
+
+Uses `__` (double underscore) as delimiter because WordPress `sanitize_file_name()` collapses `--` into `-` on upload. WordPress-appended suffixes like `-scaled` and `-rotated` are stripped before parsing.
 
 Examples:
 
 | Filename | Title | Type | Breed | Tags |
 |---|---|---|---|---|
 | `fluffy-boy.jpg` | Fluffy Boy | -- | -- | -- |
-| `street--big-sunset.jpg` | Big Sunset | Street | -- | -- |
-| `studio--portrait--yorkie.wip.adoption.jpg` | Portrait | Studio | Yorkie | wip, adoption |
+| `street__big-sunset.jpg` | Big Sunset | Street | -- | -- |
+| `studio__portrait__yorkie.wip.adoption.jpg` | Portrait | Studio | Yorkie | wip, adoption |
 
 **Part 2 -- PP Gallery Plus block**
 
 A Gutenberg block that renders a responsive image grid with:
 
-- **Filter dropdowns** for Type, Breed, and Tag taxonomies
+- **Filter dropdowns** for Type, Breed, and Tag taxonomies with a reset button
 - **Column selector** to adjust grid layout on the fly
 - **Infinite scroll** loading via AJAX
 - **Lightbox** with keyboard navigation, touch swipe, and image preloading
@@ -49,34 +51,42 @@ define( 'PPGAL2_TAX_TAG',   'ppgal2_tag' );    // Tag taxonomy
 2. Activate **Bulk PP Post** from the WordPress admin
 3. Go to **Settings > Permalinks** and click Save to flush rewrite rules
 
+## Settings
+
+The **Settings & Help** page under PP Gallery Items has two tabs:
+
+- **Settings** -- configure the default posts per page for infinite scroll. This can be overridden per-block in the editor sidebar.
+- **Help** -- filename convention reference and usage instructions.
+
 ## Taxonomies
 
 - **Types** -- hierarchical (e.g. Street, Studio)
 - **Breeds** -- hierarchical (e.g. Yorkie, Labrador)
 - **Gallery Tags** -- flat tags (e.g. WIP, Alternate, Adoption)
 
-All are auto-created during bulk import when parsed from filenames. You can also manage them manually under **Gallery Items** in the admin sidebar.
+All are auto-created during bulk import when parsed from filenames. You can also manage them manually under **PP Gallery Items** in the admin sidebar.
 
 ## Bulk action workflow
 
 1. Name your image files using the convention above
 2. Upload to **Media > Library**
-3. Switch to **List View**, select images
-4. Choose **Create Gallery Posts** from the Bulk Actions dropdown
+3. Select images (works in both list view and grid view)
+4. Choose **Create PP Gallery Posts** from the Bulk Actions dropdown (list view) or click the toolbar button (grid view)
 5. Confirm in the modal -- posts are created with parsed metadata
 
 ## PP Gallery Plus block
 
 Add the **PP Gallery Plus** block to any page.
 
-**Block attributes** (editable via block HTML for now):
+**Block settings** (in the editor sidebar Inspector panel):
 
-- `postsPerPage` -- items per infinite scroll batch (default: 20)
-- `showAltThumbs` -- use alternate thumbnails when available (default: true)
+- **Posts per page** -- items per infinite scroll batch (defaults to the global setting)
+- **Show alternate thumbnails** -- use alt thumbs when available (default: on)
 
 **Frontend features:**
 
 - Filter dropdowns narrow results by Type, Breed, or Tag
+- "Reset filters" button appears when any filter is active
 - Column selector adjusts grid from 1 to N columns
 - Scroll down to load more items automatically
 - Click any image to open the lightbox (arrow keys, swipe, Escape to close)
@@ -103,7 +113,7 @@ bulk-pp-gallery/
     admin.css                       Modal styles
   blocks/
     pp-gallery-plus/
-      block.json                    Block metadata and attributes
+      editor.js                     Block editor registration + sidebar controls
       gallery.php                   Server-side render template
       gallery.js                    Columns, filters, infinite scroll, lightbox
       gallery.css                   Grid, filter bar, lightbox styles

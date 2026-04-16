@@ -294,16 +294,25 @@ add_action( 'wp_ajax_ppgal2_bulk_create', 'ppgal2_ajax_bulk_create' );
 /**
  * Parse a media filename into structured gallery post data.
  *
- * Supports 1-3 segments separated by "--":
+ * Uses "__" (double underscore) as segment delimiter because WordPress
+ * sanitize_file_name() collapses "--" into "-" on upload.
+ *
+ * Supports 1-3 segments:
  *   title
- *   type--title
- *   type--title--breed.tag1.tag2
+ *   type__title
+ *   type__title__breed.tag1.tag2
+ *
+ * Also strips WordPress suffixes like "-scaled" and "-rotated"
+ * before parsing.
  *
  * @param string $filename Filename without extension.
  * @return array { title: string, type: string|null, breed: string|null, tags: string[] }
  */
 function ppgal2_parse_filename( $filename ) {
-    $segments = explode( '--', $filename );
+    // Strip WP-appended suffixes (-scaled, -rotated, dimension suffixes like -1024x768)
+    $filename = preg_replace( '/-(scaled|rotated|\d+x\d+)$/', '', $filename );
+
+    $segments = explode( '__', $filename );
     $result   = array( 'title' => '', 'type' => null, 'breed' => null, 'tags' => array() );
 
     $count = count( $segments );
@@ -321,7 +330,11 @@ function ppgal2_parse_filename( $filename ) {
         if ( ! empty( $breed_tags[0] ) ) {
             $result['breed'] = ucwords( str_replace( array( '-', '_' ), ' ', $breed_tags[0] ) );
         }
-        $result['tags'] = array_slice( $breed_tags, 1 );
+        // Clean tag values: trim whitespace, strip hyphens/underscores, drop empties
+        $raw_tags = array_slice( $breed_tags, 1 );
+        $result['tags'] = array_values( array_filter( array_map( function( $t ) {
+            return trim( str_replace( array( '-', '_' ), ' ', $t ) );
+        }, $raw_tags ) ) );
     }
 
     return $result;
@@ -424,7 +437,7 @@ function ppgal2_bulk_action_modal() {
             <h2>Create PP Gallery Posts</h2>
             <p class="ppgal2-modal-count"></p>
             <p class="description">Filenames will be parsed automatically:<br>
-                <code>type--title--breed.tag1.tag2.ext</code></p>
+                <code>type__title__breed.tag1.tag2.ext</code></p>
             <div class="ppgal2-modal-actions">
                 <button type="button" class="button button-primary" id="ppgal2-modal-confirm">Create Posts</button>
                 <button type="button" class="button" id="ppgal2-modal-cancel">Cancel</button>
@@ -440,8 +453,8 @@ function ppgal2_bulk_action_modal() {
 // =========================================================================
 // 5. AJAX: lightbox post data + load more
 // =========================================================================
-add_action( 'wp_ajax_get_post_data',        'ppgal2_ajax_get_post_data' );
-add_action( 'wp_ajax_nopriv_get_post_data', 'ppgal2_ajax_get_post_data' );
+add_action( 'wp_ajax_ppgal2_get_post_data',        'ppgal2_ajax_get_post_data' );
+add_action( 'wp_ajax_nopriv_ppgal2_get_post_data', 'ppgal2_ajax_get_post_data' );
 
 /**
  * AJAX handler: return post data for the lightbox overlay.
@@ -560,7 +573,7 @@ function ppgal2_render_gallery_item( $post_id, $show_alt = true ) {
     ?>
     <li class="pp-gallery__item">
         <figure>
-            <a class="post_thumbnail" title="<?php echo esc_attr( $title ); ?>"
+            <a class="ppgal2-thumb" title="<?php echo esc_attr( $title ); ?>"
                data-post-id="<?php echo esc_attr( $post_id ); ?>"
                href="<?php echo esc_url( $link ); ?>">
                 <img src="<?php echo esc_url( $thumb ); ?>" width="400"
@@ -580,9 +593,67 @@ add_action( 'init', 'ppgal2_register_block' );
 
 /**
  * Register the PP Gallery Plus block.
+ *
+ * Pure PHP registration -- no block.json dependency.
+ * All metadata, scripts, styles, and render callback defined here.
  */
 function ppgal2_register_block() {
-    register_block_type( PPGAL2_DIR . 'blocks/pp-gallery-plus' );
+    wp_register_script(
+        'ppgal2-editor',
+        PPGAL2_URL . 'blocks/pp-gallery-plus/editor.js',
+        array( 'wp-blocks', 'wp-element', 'wp-block-editor', 'wp-components', 'wp-server-side-render' ),
+        '2.0.0',
+        true
+    );
+
+    wp_register_script(
+        'ppgal2-gallery-view',
+        PPGAL2_URL . 'blocks/pp-gallery-plus/gallery.js',
+        array(),
+        '2.0.0',
+        true
+    );
+
+    wp_register_style(
+        'ppgal2-gallery-style',
+        PPGAL2_URL . 'blocks/pp-gallery-plus/gallery.css',
+        array(),
+        '2.0.0'
+    );
+
+    register_block_type( 'ppgal2/gallery', array(
+        'api_version'     => 3,
+        'title'           => 'PP Gallery Plus',
+        'description'     => 'Filterable image gallery with lightbox and infinite scroll.',
+        'category'        => 'media',
+        'icon'            => 'format-gallery',
+        'keywords'        => array( 'gallery', 'portfolio', 'grid' ),
+        'editor_script'   => 'ppgal2-editor',
+        'view_script'     => 'ppgal2-gallery-view',
+        'style'           => 'ppgal2-gallery-style',
+        'render_callback' => 'ppgal2_render_block',
+        'attributes'      => array(
+            'postsPerPage'  => array( 'type' => 'number',  'default' => 20 ),
+            'showAltThumbs' => array( 'type' => 'boolean', 'default' => true ),
+        ),
+        'supports'        => array(
+            'align'    => array( 'wide', 'full' ),
+            'multiple' => false,
+        ),
+    ) );
+}
+
+/**
+ * Server-side render callback for the gallery block.
+ *
+ * @param array  $attributes Block attributes.
+ * @param string $content    Block content.
+ * @return string Rendered HTML.
+ */
+function ppgal2_render_block( $attributes, $content ) {
+    ob_start();
+    include PPGAL2_DIR . 'blocks/pp-gallery-plus/gallery.php';
+    return ob_get_clean();
 }
 
 // =========================================================================
@@ -641,7 +712,32 @@ function ppgal2_action_links( $links ) {
 }
 
 // =========================================================================
-// 10. Admin page
+// 10. Settings
+// =========================================================================
+add_action( 'admin_init', 'ppgal2_register_settings' );
+
+/**
+ * Register plugin options with the Settings API.
+ */
+function ppgal2_register_settings() {
+    register_setting( 'ppgal2_options', 'ppgal2_posts_per_page', array(
+        'type'              => 'integer',
+        'default'           => 20,
+        'sanitize_callback' => 'absint',
+    ) );
+}
+
+/**
+ * Get the configured posts-per-page value.
+ *
+ * @return int
+ */
+function ppgal2_get_posts_per_page() {
+    return (int) get_option( 'ppgal2_posts_per_page', 20 );
+}
+
+// =========================================================================
+// 11. Admin page
 // =========================================================================
 add_action( 'admin_menu', 'ppgal2_register_admin_page' );
 
@@ -666,37 +762,91 @@ function ppgal2_render_admin_page() {
     if ( ! current_user_can( 'manage_options' ) ) {
         return;
     }
+
+    // Handle form save
+    if ( isset( $_POST['ppgal2_save_settings'] ) ) {
+        check_admin_referer( 'ppgal2_settings' );
+        update_option( 'ppgal2_posts_per_page', absint( $_POST['ppgal2_posts_per_page'] ) );
+        echo '<div class="notice notice-success is-dismissible"><p>Settings saved.</p></div>';
+    }
+
+    $per_page = ppgal2_get_posts_per_page();
     ?>
     <div class="wrap">
         <h1>Bulk PP Post</h1>
 
-        <h2>Filename Convention</h2>
-        <p>Name your image files before uploading:</p>
-        <table class="widefat fixed" style="max-width:600px;">
-            <thead><tr><th>Filename</th><th>Result</th></tr></thead>
-            <tbody>
-                <tr>
-                    <td><code>fluffy-boy.jpg</code></td>
-                    <td>Title: "Fluffy Boy"</td>
-                </tr>
-                <tr>
-                    <td><code>street--fluffy-boy.jpg</code></td>
-                    <td>Type: Street, Title: "Fluffy Boy"</td>
-                </tr>
-                <tr>
-                    <td><code>studio--fluffy-boy--yorkie.wip.adoption.jpg</code></td>
-                    <td>Type: Studio, Title: "Fluffy Boy", Breed: Yorkie, Tags: wip, adoption</td>
-                </tr>
-            </tbody>
-        </table>
+        <nav class="nav-tab-wrapper" style="margin-bottom:1.5em;">
+            <a href="#ppgal2-tab-settings" class="nav-tab nav-tab-active" data-tab="ppgal2-tab-settings">Settings</a>
+            <a href="#ppgal2-tab-help" class="nav-tab" data-tab="ppgal2-tab-help">Help</a>
+        </nav>
 
-        <h2>How to Use</h2>
-        <ol>
-            <li>Upload images to the <strong>Media Library</strong> (name them using the convention above).</li>
-            <li>Switch to <strong>List View</strong>, select images, choose <strong>Create PP Gallery Posts</strong> from Bulk Actions.</li>
-            <li>Add the <strong>PP Gallery Plus</strong> block to any page.</li>
-            <li>Visitors can filter by Type, Breed, or Tag and scroll for more.</li>
-        </ol>
+        <!-- Settings tab -->
+        <div id="ppgal2-tab-settings">
+            <form method="post">
+                <?php wp_nonce_field( 'ppgal2_settings' ); ?>
+                <table class="form-table">
+                    <tr>
+                        <th scope="row"><label for="ppgal2_posts_per_page">Posts per page</label></th>
+                        <td>
+                            <input type="number" name="ppgal2_posts_per_page" id="ppgal2_posts_per_page"
+                                   value="<?php echo esc_attr( $per_page ); ?>" min="1" max="200" step="1"
+                                   class="small-text" />
+                            <p class="description">Number of gallery items loaded per page (initial load and each infinite scroll batch). Block-level setting overrides this if set.</p>
+                        </td>
+                    </tr>
+                </table>
+                <p class="submit">
+                    <input type="submit" name="ppgal2_save_settings" class="button button-primary" value="Save Settings" />
+                </p>
+            </form>
+        </div>
+
+        <!-- Help tab -->
+        <div id="ppgal2-tab-help" style="display:none;">
+            <h2>Filename Convention</h2>
+            <p>Name your image files before uploading. Use <code>__</code> (double underscore) as the delimiter between segments. WordPress strips double hyphens on upload, so <code>--</code> will not work.</p>
+            <table class="widefat fixed" style="max-width:600px;">
+                <thead><tr><th>Filename</th><th>Result</th></tr></thead>
+                <tbody>
+                    <tr>
+                        <td><code>fluffy-boy.jpg</code></td>
+                        <td>Title: "Fluffy Boy"</td>
+                    </tr>
+                    <tr>
+                        <td><code>street__fluffy-boy.jpg</code></td>
+                        <td>Type: Street, Title: "Fluffy Boy"</td>
+                    </tr>
+                    <tr>
+                        <td><code>studio__fluffy-boy__yorkie.wip.adoption.jpg</code></td>
+                        <td>Type: Studio, Title: "Fluffy Boy", Breed: Yorkie, Tags: wip, adoption</td>
+                    </tr>
+                </tbody>
+            </table>
+
+            <h2>How to Use</h2>
+            <ol>
+                <li>Upload images to the <strong>Media Library</strong> (name them using the convention above).</li>
+                <li>Select images, choose <strong>Create PP Gallery Posts</strong> from Bulk Actions (works in both list and grid view).</li>
+                <li>Add the <strong>PP Gallery Plus</strong> block to any page.</li>
+                <li>Visitors can filter by Type, Breed, or Tag and scroll for more.</li>
+            </ol>
+        </div>
     </div>
+
+    <script>
+    (function () {
+        var tabs = document.querySelectorAll('.nav-tab-wrapper .nav-tab');
+        tabs.forEach(function (tab) {
+            tab.addEventListener('click', function (e) {
+                e.preventDefault();
+                tabs.forEach(function (t) { t.classList.remove('nav-tab-active'); });
+                document.getElementById('ppgal2-tab-settings').style.display = 'none';
+                document.getElementById('ppgal2-tab-help').style.display = 'none';
+                tab.classList.add('nav-tab-active');
+                document.getElementById(tab.dataset.tab).style.display = '';
+            });
+        });
+    })();
+    </script>
     <?php
 }

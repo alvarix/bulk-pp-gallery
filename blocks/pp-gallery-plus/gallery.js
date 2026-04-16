@@ -3,7 +3,7 @@
  *
  * Modules:
  *   1. Column selector
- *   2. Filters (Type / Breed / Tag)
+ *   2. Filters (Type / Breed / Tag) + reset button
  *   3. Infinite scroll
  *   4. Lightbox (vanilla JS, touch swipe, preloading)
  */
@@ -61,18 +61,44 @@
   // 2. Filters
   // -----------------------------------------------------------------------
 
+  var resetBtn;
+
   /**
-   * Bind change handlers on each .ppgal2-filter <select>.
-   * On change, clears the gallery and reloads from page 1.
+   * Bind change handlers on each .ppgal2-filter <select> and the reset button.
    */
   function setupFilters() {
     var selects = block.querySelectorAll(".ppgal2-filter");
+    resetBtn = block.querySelector(".ppgal2-filter-reset");
+
     selects.forEach(function (sel) {
       sel.addEventListener("change", function () {
         filters[this.dataset.taxonomy] = this.value;
+        updateResetButton();
         reloadGallery();
       });
     });
+
+    if (resetBtn) {
+      resetBtn.addEventListener("click", function () {
+        filters = {};
+        selects.forEach(function (sel) {
+          sel.value = "";
+        });
+        updateResetButton();
+        reloadGallery();
+      });
+    }
+  }
+
+  /**
+   * Show the reset button only when at least one filter is active.
+   */
+  function updateResetButton() {
+    if (!resetBtn) return;
+    var active = Object.keys(filters).some(function (k) {
+      return filters[k];
+    });
+    resetBtn.style.display = active ? "" : "none";
   }
 
   /**
@@ -156,8 +182,8 @@
    * @param {boolean} visible Whether to show the sentinel.
    */
   function showSentinel(visible) {
-    var el = block.querySelector(".ppgal2-sentinel");
-    if (el) el.style.display = visible ? "" : "none";
+    var sentinel = block.querySelector(".ppgal2-sentinel");
+    if (sentinel) sentinel.style.display = visible ? "" : "none";
   }
 
   // -----------------------------------------------------------------------
@@ -173,18 +199,22 @@
    */
   function setupLightbox() {
     lightbox = block.querySelector(".ppgal2-lightbox");
-    lbImage = lightbox.querySelector("#lightbox-image");
-    lbTitle = lightbox.querySelector("#lightbox-title");
-    lbDesc = lightbox.querySelector("#lightbox-description");
+    if (!lightbox) return;
+
+    lbImage = lightbox.querySelector(".ppgal2-lb-image");
+    lbTitle = lightbox.querySelector(".ppgal2-lb-title");
+    lbDesc = lightbox.querySelector(".ppgal2-lb-description");
     lbSpinner = lightbox.querySelector(".ppgal2-lightbox-spinner");
 
-    lightbox.querySelector(".close").addEventListener("click", closeLightbox);
-    lightbox.querySelector(".prev").addEventListener("click", function (e) {
+    lightbox.querySelector(".ppgal2-close").addEventListener("click", closeLightbox);
+    lightbox.querySelector(".ppgal2-prev").addEventListener("click", function (e) {
       e.preventDefault();
+      e.stopPropagation();
       navigate(-1);
     });
-    lightbox.querySelector(".next").addEventListener("click", function (e) {
+    lightbox.querySelector(".ppgal2-next").addEventListener("click", function (e) {
       e.preventDefault();
+      e.stopPropagation();
       navigate(1);
     });
 
@@ -239,19 +269,20 @@
   }
 
   /**
-   * Bind click handlers on all .post_thumbnail links.
+   * Bind click handlers on all .post_thumbnail links inside our block.
    * Safe to call repeatedly -- skips already-bound links.
    */
   function bindThumbnailClicks() {
-    posts = Array.from(gallery.querySelectorAll(".post_thumbnail"));
+    posts = Array.from(gallery.querySelectorAll(".ppgal2-thumb"));
     posts.forEach(function (link) {
       if (link.dataset.lbBound) return;
       link.dataset.lbBound = "1";
 
       link.addEventListener("click", function (e) {
         e.preventDefault();
+        e.stopPropagation(); // Prevent old theme handlers from firing
         currentIndex = Array.from(
-          gallery.querySelectorAll(".post_thumbnail")
+          gallery.querySelectorAll(".ppgal2-thumb")
         ).indexOf(link);
         openLightbox(currentIndex);
       });
@@ -264,12 +295,14 @@
    * @param {number} idx Index into the current posts list.
    */
   function openLightbox(idx) {
-    posts = Array.from(gallery.querySelectorAll(".post_thumbnail"));
+    posts = Array.from(gallery.querySelectorAll(".ppgal2-thumb"));
     currentIndex = idx;
     var link = posts[idx];
     if (!link) return;
 
     var postId = link.dataset.postId;
+    if (!postId) return;
+
     lbSpinner.style.display = "";
     lbImage.style.opacity = "0.3";
     lightbox.style.display = "flex";
@@ -277,7 +310,7 @@
 
     // Store previous focus for restoration on close
     lightbox._prevFocus = document.activeElement;
-    lightbox.querySelector(".close").focus();
+    lightbox.querySelector(".ppgal2-close").focus();
 
     fetchPostData(postId);
     preloadAdjacent(idx);
@@ -298,19 +331,20 @@
    * @param {number} dir Direction offset (-1 = prev, +1 = next).
    */
   function navigate(dir) {
-    posts = Array.from(gallery.querySelectorAll(".post_thumbnail"));
+    posts = Array.from(gallery.querySelectorAll(".ppgal2-thumb"));
     currentIndex = (currentIndex + dir + posts.length) % posts.length;
     openLightbox(currentIndex);
   }
 
   /**
    * Fetch full post data for the lightbox via AJAX.
+   * Uses ppgal2-namespaced action to avoid conflicts with theme handlers.
    *
    * @param {string} postId WordPress post ID.
    */
   function fetchPostData(postId) {
     var body = new FormData();
-    body.append("action", "get_post_data");
+    body.append("action", "ppgal2_get_post_data");
     body.append("id", postId);
 
     fetch(ajaxUrl, { method: "POST", body: body })
@@ -330,10 +364,19 @@
             lbImage.style.opacity = "1";
             lbSpinner.style.display = "none";
           };
+          img.onerror = function () {
+            lbImage.style.opacity = "1";
+            lbSpinner.style.display = "none";
+          };
           img.src = resp.data.image_url;
+        } else {
+          console.warn("ppgal2 lightbox: failed to load post", postId, resp);
+          lbSpinner.style.display = "none";
+          lbImage.style.opacity = "1";
         }
       })
-      .catch(function () {
+      .catch(function (err) {
+        console.error("ppgal2 lightbox fetch error:", err);
         lbSpinner.style.display = "none";
         lbImage.style.opacity = "1";
       });
