@@ -31,7 +31,7 @@ A Gutenberg block that renders a responsive image grid with:
 - **Filter dropdowns** for Type, Breed, and Tag taxonomies with a reset button
 - **Column selector** to adjust grid layout on the fly
 - **Infinite scroll** loading via AJAX
-- **Lightbox** with keyboard navigation, touch swipe, and image preloading
+- **Lightbox** with keyboard navigation, touch swipe, and adjacent post prefetching for instant prev/next
 - **Alternate thumbnail** support (per-post override with disable toggle)
 
 ## Configuration

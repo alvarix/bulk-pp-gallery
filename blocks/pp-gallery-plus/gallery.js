@@ -193,6 +193,7 @@
   var lightbox, lbImage, lbTitle, lbDesc, lbSpinner;
   var posts = [];
   var currentIndex = 0;
+  var postDataCache = {};
 
   /**
    * Initialize lightbox: bind close/prev/next, keyboard, touch swipe.
@@ -337,64 +338,89 @@
   }
 
   /**
-   * Fetch full post data for the lightbox via AJAX.
-   * Uses ppgal2-namespaced action to avoid conflicts with theme handlers.
+   * Fetch post data via AJAX and return a Promise.
+   * Results are cached so repeated requests for the same post are free.
    *
    * @param {string} postId WordPress post ID.
+   * @return {Promise<object|null>} Resolved post data or null on failure.
    */
-  function fetchPostData(postId) {
+  function getPostData(postId) {
+    if (postDataCache[postId]) {
+      return Promise.resolve(postDataCache[postId]);
+    }
+
     var body = new FormData();
     body.append("action", "ppgal2_get_post_data");
     body.append("id", postId);
 
-    fetch(ajaxUrl, { method: "POST", body: body })
+    return fetch(ajaxUrl, { method: "POST", body: body })
       .then(function (r) {
         return r.json();
       })
       .then(function (resp) {
         if (resp.success) {
-          lbTitle.textContent = resp.data.title;
-          lbDesc.innerHTML = resp.data.description;
-          lbImage.alt = resp.data.title;
-
-          // Load image in background, then reveal with transition
-          var img = new Image();
-          img.onload = function () {
-            lbImage.src = resp.data.image_url;
-            lbImage.style.opacity = "1";
-            lbSpinner.style.display = "none";
-          };
-          img.onerror = function () {
-            lbImage.style.opacity = "1";
-            lbSpinner.style.display = "none";
-          };
-          img.src = resp.data.image_url;
-        } else {
-          console.warn("ppgal2 lightbox: failed to load post", postId, resp);
-          lbSpinner.style.display = "none";
-          lbImage.style.opacity = "1";
+          postDataCache[postId] = resp.data;
+          return resp.data;
         }
+        console.warn("ppgal2 lightbox: failed to load post", postId, resp);
+        return null;
       })
       .catch(function (err) {
         console.error("ppgal2 lightbox fetch error:", err);
-        lbSpinner.style.display = "none";
-        lbImage.style.opacity = "1";
+        return null;
       });
   }
 
   /**
-   * Preload thumbnail images for items adjacent to the current index.
-   * Helps make prev/next navigation feel instant.
+   * Fetch post data and render it into the lightbox.
+   *
+   * @param {string} postId WordPress post ID.
+   */
+  function fetchPostData(postId) {
+    getPostData(postId).then(function (data) {
+      if (data) {
+        lbTitle.textContent = data.title;
+        lbDesc.innerHTML = data.description;
+        lbImage.alt = data.title;
+
+        var img = new Image();
+        img.onload = function () {
+          lbImage.src = data.image_url;
+          lbImage.style.opacity = "1";
+          lbSpinner.style.display = "none";
+        };
+        img.onerror = function () {
+          lbImage.style.opacity = "1";
+          lbSpinner.style.display = "none";
+        };
+        img.src = data.image_url;
+      } else {
+        lbSpinner.style.display = "none";
+        lbImage.style.opacity = "1";
+      }
+    });
+  }
+
+  /**
+   * Prefetch post data and full-size images for items adjacent to the
+   * current index. On cache hit, navigation renders instantly with no
+   * AJAX wait or image decode delay.
    *
    * @param {number} idx Current lightbox index.
    */
   function preloadAdjacent(idx) {
     [-1, 1].forEach(function (offset) {
       var neighbor = posts[(idx + offset + posts.length) % posts.length];
-      if (neighbor) {
-        var src = neighbor.querySelector("img");
-        if (src) new Image().src = src.getAttribute("src");
-      }
+      if (!neighbor) return;
+
+      var neighborId = neighbor.dataset.postId;
+      if (!neighborId) return;
+
+      getPostData(neighborId).then(function (data) {
+        if (data && data.image_url) {
+          new Image().src = data.image_url;
+        }
+      });
     });
   }
 
