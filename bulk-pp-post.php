@@ -681,6 +681,9 @@ add_action( 'pre_get_posts', 'ppgal2_add_to_rss' );
  * @param WP_Query $query The current query object.
  */
 function ppgal2_add_to_rss( $query ) {
+    if ( ! get_option( 'ppgal2_include_in_rss', true ) ) {
+        return;
+    }
     if ( $query->is_feed() && $query->is_main_query() ) {
         $existing = $query->get( 'post_type' );
         if ( empty( $existing ) ) {
@@ -725,6 +728,12 @@ function ppgal2_register_settings() {
         'default'           => 20,
         'sanitize_callback' => 'absint',
     ) );
+
+    register_setting( 'ppgal2_options', 'ppgal2_include_in_rss', array(
+        'type'              => 'boolean',
+        'default'           => true,
+        'sanitize_callback' => 'rest_sanitize_boolean',
+    ) );
 }
 
 /**
@@ -767,6 +776,7 @@ function ppgal2_render_admin_page() {
     if ( isset( $_POST['ppgal2_save_settings'] ) ) {
         check_admin_referer( 'ppgal2_settings' );
         update_option( 'ppgal2_posts_per_page', absint( $_POST['ppgal2_posts_per_page'] ) );
+        update_option( 'ppgal2_include_in_rss', isset( $_POST['ppgal2_include_in_rss'] ) );
         echo '<div class="notice notice-success is-dismissible"><p>Settings saved.</p></div>';
     }
 
@@ -792,6 +802,16 @@ function ppgal2_render_admin_page() {
                                    value="<?php echo esc_attr( $per_page ); ?>" min="1" max="200" step="1"
                                    class="small-text" />
                             <p class="description">Number of gallery items loaded per page (initial load and each infinite scroll batch). Block-level setting overrides this if set.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row">Include in RSS feed</th>
+                        <td>
+                            <label>
+                                <input type="checkbox" name="ppgal2_include_in_rss" value="1"
+                                       <?php checked( get_option( 'ppgal2_include_in_rss', true ) ); ?> />
+                                Include gallery items in the site's main RSS feed
+                            </label>
                         </td>
                     </tr>
                 </table>

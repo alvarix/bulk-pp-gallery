@@ -55,7 +55,7 @@ define( 'PPGAL2_TAX_TAG',   'ppgal2_tag' );    // Tag taxonomy
 
 The **Settings & Help** page under PP Gallery Items has two tabs:
 
-- **Settings** -- configure the default posts per page for infinite scroll. This can be overridden per-block in the editor sidebar.
+- **Settings** -- configure the default posts per page for infinite scroll (overridable per-block in the editor sidebar), and toggle whether gallery items appear in the site's main RSS feed.
 - **Help** -- filename convention reference and usage instructions.
 
 ## Taxonomies
@@ -101,7 +101,7 @@ Each gallery post has an optional alternate thumbnail, managed via a meta box in
 
 ## RSS
 
-Gallery items are automatically included in the site's main RSS feed.
+Gallery items are included in the site's main RSS feed by default. This can be toggled off in **Settings & Help > Settings**.
 
 ## File structure
 
