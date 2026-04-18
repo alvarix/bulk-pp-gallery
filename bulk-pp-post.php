@@ -97,7 +97,7 @@ function ppgal2_register_taxonomies() {
             'menu_name'     => 'Breeds',
         ),
         'public'       => true,
-        'hierarchical' => true,
+        'hierarchical' => false,
         'show_in_rest' => true,
         'rewrite'      => array( 'slug' => 'gallery-breed' ),
     ) );
@@ -120,6 +120,33 @@ function ppgal2_register_taxonomies() {
         'show_in_rest' => true,
         'rewrite'      => array( 'slug' => 'gallery-tag' ),
     ) );
+}
+
+// =========================================================================
+// 2b. Breed sort meta sync
+// =========================================================================
+add_action( 'set_object_terms', 'ppgal2_sync_breed_sort_meta', 10, 4 );
+
+/**
+ * Cache breed term name as post meta for sortable queries.
+ * WordPress doesn't support ORDER BY taxonomy term natively,
+ * so we mirror the first breed name to _ppgal2_breed_sort.
+ *
+ * @param int    $object_id  Post ID.
+ * @param array  $terms      Term slugs or IDs being set.
+ * @param array  $tt_ids     Term taxonomy IDs.
+ * @param string $taxonomy   Taxonomy slug.
+ */
+function ppgal2_sync_breed_sort_meta( $object_id, $terms, $tt_ids, $taxonomy ) {
+    if ( $taxonomy !== PPGAL2_TAX_BREED ) {
+        return;
+    }
+    $breed_terms = get_the_terms( $object_id, PPGAL2_TAX_BREED );
+    if ( ! empty( $breed_terms ) && ! is_wp_error( $breed_terms ) ) {
+        update_post_meta( $object_id, '_ppgal2_breed_sort', $breed_terms[0]->name );
+    } else {
+        delete_post_meta( $object_id, '_ppgal2_breed_sort' );
+    }
 }
 
 // =========================================================================
@@ -526,7 +553,24 @@ function ppgal2_ajax_load_more() {
         $args['tax_query']     = $tax_query;
     }
 
-    $show_alt = ! empty( $_GET['show_alt_thumbs'] );
+    // Sort handling
+    $sort = isset( $_GET['sort'] ) ? sanitize_text_field( $_GET['sort'] ) : 'date-desc';
+    $sort_parts = explode( '-', $sort, 2 );
+    $sort_field = $sort_parts[0];
+    $sort_dir   = isset( $sort_parts[1] ) ? strtoupper( $sort_parts[1] ) : 'DESC';
+
+    if ( $sort_field === 'breed' ) {
+        // Sort by breed taxonomy term name
+        $args['orderby']  = 'meta_value';
+        $args['meta_key'] = '_ppgal2_breed_sort';
+        $args['order']    = $sort_dir;
+    } else {
+        $args['orderby'] = $sort_field === 'title' ? 'title' : 'date';
+        $args['order']   = $sort_dir;
+    }
+
+    $show_alt    = ! empty( $_GET['show_alt_thumbs'] );
+    $show_titles = ! empty( $_GET['show_titles'] );
 
     $query = new WP_Query( $args );
     $html  = '';
@@ -534,7 +578,7 @@ function ppgal2_ajax_load_more() {
     if ( $query->have_posts() ) {
         while ( $query->have_posts() ) {
             $query->the_post();
-            $html .= ppgal2_render_gallery_item( get_the_ID(), $show_alt );
+            $html .= ppgal2_render_gallery_item( get_the_ID(), $show_alt, $show_titles );
         }
         wp_reset_postdata();
     }
@@ -549,11 +593,12 @@ function ppgal2_ajax_load_more() {
 /**
  * Render a single gallery list item.
  *
- * @param int  $post_id  Post ID.
- * @param bool $show_alt Whether block-level alt thumbs are enabled.
+ * @param int  $post_id     Post ID.
+ * @param bool $show_alt    Whether block-level alt thumbs are enabled.
+ * @param bool $show_titles Whether to show titles below thumbnails.
  * @return string HTML for one <li>.
  */
-function ppgal2_render_gallery_item( $post_id, $show_alt = true ) {
+function ppgal2_render_gallery_item( $post_id, $show_alt = true, $show_titles = false ) {
     $no_alt = (bool) get_post_meta( $post_id, 'ppgal2_no_alt_thumb', true );
     $alt_id = (int) get_post_meta( $post_id, 'ppgal2_thumb_alt', true );
     $title  = get_the_title( $post_id );
@@ -579,6 +624,9 @@ function ppgal2_render_gallery_item( $post_id, $show_alt = true ) {
                 <img src="<?php echo esc_url( $thumb ); ?>" width="400"
                      alt="<?php echo esc_attr( $title ); ?>" loading="lazy" />
             </a>
+            <?php if ( $show_titles ) : ?>
+                <figcaption class="ppgal2-thumb-title"><?php echo esc_html( $title ); ?></figcaption>
+            <?php endif; ?>
             <?php edit_post_link( 'Edit', '', '', $post_id ); ?>
         </figure>
     </li>
@@ -635,6 +683,7 @@ function ppgal2_register_block() {
         'attributes'      => array(
             'postsPerPage'  => array( 'type' => 'number',  'default' => 20 ),
             'showAltThumbs' => array( 'type' => 'boolean', 'default' => true ),
+            'showTitles'    => array( 'type' => 'boolean', 'default' => false ),
         ),
         'supports'        => array(
             'align'    => array( 'wide', 'full' ),

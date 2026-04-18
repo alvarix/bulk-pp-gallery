@@ -61,7 +61,7 @@ The **Settings & Help** page under PP Gallery Items has two tabs:
 ## Taxonomies
 
 - **Types** -- hierarchical (e.g. Street, Studio)
-- **Breeds** -- hierarchical (e.g. Yorkie, Labrador)
+- **Breeds** -- flat tags (e.g. Yorkie, Labrador)
 - **Gallery Tags** -- flat tags (e.g. WIP, Alternate, Adoption)
 
 All are auto-created during bulk import when parsed from filenames. You can also manage them manually under **PP Gallery Items** in the admin sidebar.
@@ -82,10 +82,12 @@ Add the **PP Gallery Plus** block to any page.
 
 - **Posts per page** -- items per infinite scroll batch (defaults to the global setting)
 - **Show alternate thumbnails** -- use alt thumbs when available (default: on)
+- **Show titles** -- display post title below each thumbnail (default: off)
 
 **Frontend features:**
 
 - Filter dropdowns narrow results by Type, Breed, or Tag
+- Sort by date, title, or breed
 - "Reset filters" button appears when any filter is active
 - Column selector adjusts grid from 1 to N columns
 - Scroll down to load more items automatically
