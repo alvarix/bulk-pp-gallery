@@ -14,7 +14,7 @@
   // -----------------------------------------------------------------------
   // Shared state
   // -----------------------------------------------------------------------
-  var block, gallery, ajaxUrl, perPage, showAlt, showTitles, currentPage, maxPages, loading;
+  var block, gallery, ajaxUrl, perPage, showAlt, currentPage, maxPages, loading;
   var filters = {};
   var currentSort = "date-desc";
 
@@ -27,7 +27,7 @@
    * Infers initial count from CSS-applied widths.
    */
   function setupColumns() {
-    if (block.querySelector(".ppgal2-column-select")) return;
+    if (block.querySelector(".ppgal2-column-select") || block.querySelector(".column-select")) return;
 
     var firstItem = gallery.querySelector("li");
     if (!firstItem) return;
@@ -118,6 +118,22 @@
   }
 
   /**
+   * Bind click handler on the title toggle button.
+   * Toggles between thumbnail images and title text -- CSS-only swap,
+   * no AJAX reload needed.
+   */
+  function setupTitleToggle() {
+    var btn = block.querySelector(".ppgal2-title-toggle");
+    if (!btn) return;
+
+    btn.addEventListener("click", function () {
+      var active = block.classList.toggle("ppgal2-titles-mode");
+      btn.classList.toggle("active", active);
+      btn.textContent = active ? "Thumbs" : "Titles";
+    });
+  }
+
+  /**
    * Clear current items, reset to page 1, fetch filtered results.
    */
   function reloadGallery() {
@@ -163,7 +179,6 @@
       page: currentPage,
       per_page: perPage,
       show_alt_thumbs: showAlt ? "1" : "",
-      show_titles: showTitles ? "1" : "",
       sort: currentSort,
     });
 
@@ -459,7 +474,6 @@
         : "/wp-admin/admin-ajax.php";
     perPage = parseInt(block.dataset.perPage, 10) || 20;
     showAlt = block.dataset.showAlt === "1";
-    showTitles = block.dataset.showTitles === "1";
     currentPage = 1;
     maxPages = parseInt(block.dataset.maxPages, 10) || 1;
     loading = false;
@@ -467,6 +481,7 @@
     setupColumns();
     setupFilters();
     setupSort();
+    setupTitleToggle();
     setupInfiniteScroll();
     setupLightbox();
   });

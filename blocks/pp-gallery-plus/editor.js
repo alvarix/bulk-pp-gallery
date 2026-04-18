@@ -36,7 +36,6 @@
         attributes: {
             postsPerPage: { type: 'number', default: 20 },
             showAltThumbs: { type: 'boolean', default: true },
-            showTitles: { type: 'boolean', default: false },
         },
 
         edit: function (props) {
@@ -92,13 +91,6 @@
                             checked: attributes.showAltThumbs,
                             onChange: function (val) {
                                 props.setAttributes({ showAltThumbs: val });
-                            },
-                        }),
-                        el(ToggleControl, {
-                            label: 'Show titles below thumbnails',
-                            checked: attributes.showTitles,
-                            onChange: function (val) {
-                                props.setAttributes({ showTitles: val });
                             },
                         })
                     )

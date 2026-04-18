@@ -88,6 +88,7 @@ Add the **PP Gallery Plus** block to any page.
 
 - Filter dropdowns narrow results by Type, Breed, or Tag
 - Sort by date, title, or breed
+- Titles/Thumbs toggle switches between image grid and flat title list with small thumbnails
 - "Reset filters" button appears when any filter is active
 - Column selector adjusts grid from 1 to N columns
 - Scroll down to load more items automatically

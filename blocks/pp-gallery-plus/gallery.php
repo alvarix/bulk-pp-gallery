@@ -12,8 +12,6 @@ $per_page        = isset( $attributes['postsPerPage'] ) && $attributes['postsPer
     ? (int) $attributes['postsPerPage']
     : $global_per_page;
 $show_alt        = isset( $attributes['showAltThumbs'] ) ? (bool) $attributes['showAltThumbs'] : true;
-$show_titles     = isset( $attributes['showTitles'] ) ? (bool) $attributes['showTitles'] : false;
-
 $class_name = 'pp-gallery full-width-wp-gallery';
 if ( ! empty( $attributes['className'] ) ) {
     $class_name .= ' ' . $attributes['className'];
@@ -39,7 +37,6 @@ $query = new WP_Query( array(
 <div class="ppgal2-block"
      data-per-page="<?php echo esc_attr( $per_page ); ?>"
      data-show-alt="<?php echo $show_alt ? '1' : '0'; ?>"
-     data-show-titles="<?php echo $show_titles ? '1' : '0'; ?>"
      data-max-pages="<?php echo esc_attr( $query->max_num_pages ); ?>">
 
     <!-- Filter bar -->
@@ -82,6 +79,10 @@ $query = new WP_Query( array(
             Reset filters
         </button>
 
+        <button type="button" class="ppgal2-title-toggle" aria-label="Toggle view">
+            Titles
+        </button>
+
         <select class="ppgal2-sort" aria-label="Sort by">
             <option value="date-desc">Newest first</option>
             <option value="date-asc">Oldest first</option>
@@ -99,7 +100,7 @@ $query = new WP_Query( array(
         if ( $query->have_posts() ) {
             while ( $query->have_posts() ) {
                 $query->the_post();
-                echo ppgal2_render_gallery_item( get_the_ID(), $show_alt, $show_titles );
+                echo ppgal2_render_gallery_item( get_the_ID(), $show_alt );
             }
             wp_reset_postdata();
         }

@@ -26,12 +26,35 @@
     margin: 0;
 }
 
+/* Title text inside each thumb link -- hidden by default, shown in titles mode */
 .ppgal2-thumb-title {
-    font-size: 13px;
-    text-align: center;
-    padding: 4px 2px;
+    display: none;
+}
+
+/* Titles mode: flat list with small thumbnail */
+.ppgal2-titles-mode .pp-gallery {
+    display: block;
+}
+
+.ppgal2-titles-mode .pp-gallery li {
+    width: 100%;
+    padding: 4px 0;
+}
+
+.ppgal2-titles-mode .ppgal2-thumb img {
+    width: 50px;
+    height: 50px;
+    object-fit: cover;
+    display: inline-block;
+    vertical-align: middle;
+    margin-right: 12px;
+}
+
+.ppgal2-titles-mode .ppgal2-thumb-title {
+    display: inline;
+    font-size: 14px;
     color: #333;
-    line-height: 1.3;
+    vertical-align: middle;
 }
 
 /* ---- Filter bar ---- */
@@ -64,6 +87,22 @@
 .ppgal2-filter-reset:hover {
     background: #c00;
     color: #fff;
+}
+
+.ppgal2-title-toggle {
+    padding: 6px 12px;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+    font-size: 13px;
+    background: #fff;
+    color: #333;
+    cursor: pointer;
+}
+
+.ppgal2-title-toggle.active {
+    background: #333;
+    color: #fff;
+    border-color: #333;
 }
 
 /* ---- Column selector ---- */

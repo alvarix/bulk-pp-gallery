@@ -569,8 +569,7 @@ function ppgal2_ajax_load_more() {
         $args['order']   = $sort_dir;
     }
 
-    $show_alt    = ! empty( $_GET['show_alt_thumbs'] );
-    $show_titles = ! empty( $_GET['show_titles'] );
+    $show_alt = ! empty( $_GET['show_alt_thumbs'] );
 
     $query = new WP_Query( $args );
     $html  = '';
@@ -578,7 +577,7 @@ function ppgal2_ajax_load_more() {
     if ( $query->have_posts() ) {
         while ( $query->have_posts() ) {
             $query->the_post();
-            $html .= ppgal2_render_gallery_item( get_the_ID(), $show_alt, $show_titles );
+            $html .= ppgal2_render_gallery_item( get_the_ID(), $show_alt );
         }
         wp_reset_postdata();
     }
@@ -593,12 +592,11 @@ function ppgal2_ajax_load_more() {
 /**
  * Render a single gallery list item.
  *
- * @param int  $post_id     Post ID.
- * @param bool $show_alt    Whether block-level alt thumbs are enabled.
- * @param bool $show_titles Whether to show titles below thumbnails.
+ * @param int  $post_id  Post ID.
+ * @param bool $show_alt Whether block-level alt thumbs are enabled.
  * @return string HTML for one <li>.
  */
-function ppgal2_render_gallery_item( $post_id, $show_alt = true, $show_titles = false ) {
+function ppgal2_render_gallery_item( $post_id, $show_alt = true ) {
     $no_alt = (bool) get_post_meta( $post_id, 'ppgal2_no_alt_thumb', true );
     $alt_id = (int) get_post_meta( $post_id, 'ppgal2_thumb_alt', true );
     $title  = get_the_title( $post_id );
@@ -623,10 +621,8 @@ function ppgal2_render_gallery_item( $post_id, $show_alt = true, $show_titles = 
                href="<?php echo esc_url( $link ); ?>">
                 <img src="<?php echo esc_url( $thumb ); ?>" width="400"
                      alt="<?php echo esc_attr( $title ); ?>" loading="lazy" />
+                <span class="ppgal2-thumb-title"><?php echo esc_html( $title ); ?></span>
             </a>
-            <?php if ( $show_titles ) : ?>
-                <figcaption class="ppgal2-thumb-title"><?php echo esc_html( $title ); ?></figcaption>
-            <?php endif; ?>
             <?php edit_post_link( 'Edit', '', '', $post_id ); ?>
         </figure>
     </li>
@@ -683,7 +679,6 @@ function ppgal2_register_block() {
         'attributes'      => array(
             'postsPerPage'  => array( 'type' => 'number',  'default' => 20 ),
             'showAltThumbs' => array( 'type' => 'boolean', 'default' => true ),
-            'showTitles'    => array( 'type' => 'boolean', 'default' => false ),
         ),
         'supports'        => array(
             'align'    => array( 'wide', 'full' ),
