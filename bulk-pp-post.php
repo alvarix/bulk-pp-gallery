@@ -600,13 +600,12 @@ function ppgal2_ajax_load_more() {
     $sort_dir   = isset( $sort_parts[1] ) ? strtoupper( $sort_parts[1] ) : 'DESC';
 
     if ( $sort_field === 'breed' ) {
-        // Sort by breed taxonomy term name
-        $args['orderby']  = 'meta_value';
+        // Sort by breed taxonomy term name, then ID for stable pagination
+        $args['orderby']  = array( 'meta_value' => $sort_dir, 'ID' => $sort_dir );
         $args['meta_key'] = '_ppgal2_breed_sort';
-        $args['order']    = $sort_dir;
     } else {
-        $args['orderby'] = $sort_field === 'title' ? 'title' : 'date';
-        $args['order']   = $sort_dir;
+        $field = $sort_field === 'title' ? 'title' : 'date';
+        $args['orderby'] = array( $field => $sort_dir, 'ID' => $sort_dir );
     }
 
     $show_alt = ! empty( $_GET['show_alt_thumbs'] );
