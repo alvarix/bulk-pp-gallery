@@ -457,6 +457,37 @@
     });
   }
 
+  /**
+   * Read URL params to pre-select filters and sort.
+   * Supports: ?type=street&breed=cat&tag=wip&sort=title-asc
+   */
+  function applyUrlParams() {
+    var params = new URLSearchParams(window.location.search);
+    var changed = false;
+
+    ["type", "breed", "tag"].forEach(function (key) {
+      var val = params.get(key);
+      if (!val) return;
+      filters[key] = val;
+      var sel = block.querySelector('.ppgal2-filter[data-taxonomy="' + key + '"]');
+      if (sel) sel.value = val;
+      changed = true;
+    });
+
+    var sort = params.get("sort");
+    if (sort) {
+      currentSort = sort;
+      var sortSel = block.querySelector(".ppgal2-sort");
+      if (sortSel) sortSel.value = sort;
+      changed = true;
+    }
+
+    if (changed) {
+      updateResetButton();
+      reloadGallery();
+    }
+  }
+
   // -----------------------------------------------------------------------
   // Init
   // -----------------------------------------------------------------------
@@ -482,6 +513,7 @@
     setupFilters();
     setupSort();
     setupTitleToggle();
+    applyUrlParams();
     setupInfiniteScroll();
     setupLightbox();
   });
