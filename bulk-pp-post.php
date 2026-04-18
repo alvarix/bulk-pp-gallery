@@ -56,6 +56,43 @@ function ppgal2_register_cpt() {
 }
 
 // =========================================================================
+// 1b. Admin list thumbnail column
+// =========================================================================
+add_filter( 'manage_' . PPGAL2_CPT . '_posts_columns', 'ppgal2_add_thumb_column' );
+add_action( 'manage_' . PPGAL2_CPT . '_posts_custom_column', 'ppgal2_render_thumb_column', 10, 2 );
+
+/**
+ * Insert a thumbnail column at the start of the admin list table.
+ *
+ * @param array $columns Existing columns.
+ * @return array Modified columns.
+ */
+function ppgal2_add_thumb_column( $columns ) {
+    $new = array();
+    foreach ( $columns as $key => $label ) {
+        if ( $key === 'title' ) {
+            $new['ppgal2_thumb'] = '';
+        }
+        $new[ $key ] = $label;
+    }
+    return $new;
+}
+
+/**
+ * Render the thumbnail in the admin list table.
+ *
+ * @param string $column  Column name.
+ * @param int    $post_id Post ID.
+ */
+function ppgal2_render_thumb_column( $column, $post_id ) {
+    if ( $column !== 'ppgal2_thumb' ) return;
+    $thumb = get_the_post_thumbnail_url( $post_id, 'thumbnail' );
+    if ( $thumb ) {
+        echo '<img src="' . esc_url( $thumb ) . '" style="width:50px;height:50px;object-fit:cover;" />';
+    }
+}
+
+// =========================================================================
 // 2. Taxonomies
 // =========================================================================
 add_action( 'init', 'ppgal2_register_taxonomies' );
@@ -77,10 +114,11 @@ function ppgal2_register_taxonomies() {
             'new_item_name' => 'New Type Name',
             'menu_name'     => 'Types',
         ),
-        'public'       => true,
-        'hierarchical' => true,
-        'show_in_rest' => true,
-        'rewrite'      => array( 'slug' => 'gallery-type' ),
+        'public'            => true,
+        'hierarchical'      => true,
+        'show_in_rest'      => true,
+        'show_admin_column' => true,
+        'rewrite'           => array( 'slug' => 'gallery-type' ),
     ) );
 
     // Breed
@@ -96,10 +134,11 @@ function ppgal2_register_taxonomies() {
             'new_item_name' => 'New Breed Name',
             'menu_name'     => 'Breeds',
         ),
-        'public'       => true,
-        'hierarchical' => false,
-        'show_in_rest' => true,
-        'rewrite'      => array( 'slug' => 'gallery-breed' ),
+        'public'            => true,
+        'hierarchical'      => false,
+        'show_in_rest'      => true,
+        'show_admin_column' => true,
+        'rewrite'           => array( 'slug' => 'gallery-breed' ),
     ) );
 
     // Tags (WIP, alternate, adoption, etc.)
@@ -115,10 +154,11 @@ function ppgal2_register_taxonomies() {
             'new_item_name' => 'New Gallery Tag Name',
             'menu_name'     => 'Tags',
         ),
-        'public'       => true,
-        'hierarchical' => false,
-        'show_in_rest' => true,
-        'rewrite'      => array( 'slug' => 'gallery-tag' ),
+        'public'            => true,
+        'hierarchical'      => false,
+        'show_in_rest'      => true,
+        'show_admin_column' => true,
+        'rewrite'           => array( 'slug' => 'gallery-tag' ),
     ) );
 }
 
@@ -778,6 +818,18 @@ function ppgal2_register_settings() {
         'default'           => true,
         'sanitize_callback' => 'rest_sanitize_boolean',
     ) );
+
+    register_setting( 'ppgal2_options', 'ppgal2_default_type', array(
+        'type'              => 'string',
+        'default'           => '',
+        'sanitize_callback' => 'sanitize_text_field',
+    ) );
+
+    register_setting( 'ppgal2_options', 'ppgal2_default_sort', array(
+        'type'              => 'string',
+        'default'           => 'date-desc',
+        'sanitize_callback' => 'sanitize_text_field',
+    ) );
 }
 
 /**
@@ -821,6 +873,8 @@ function ppgal2_render_admin_page() {
         check_admin_referer( 'ppgal2_settings' );
         update_option( 'ppgal2_posts_per_page', absint( $_POST['ppgal2_posts_per_page'] ) );
         update_option( 'ppgal2_include_in_rss', isset( $_POST['ppgal2_include_in_rss'] ) );
+        update_option( 'ppgal2_default_type', sanitize_text_field( $_POST['ppgal2_default_type'] ?? '' ) );
+        update_option( 'ppgal2_default_sort', sanitize_text_field( $_POST['ppgal2_default_sort'] ?? 'date-desc' ) );
         echo '<div class="notice notice-success is-dismissible"><p>Settings saved.</p></div>';
     }
 
@@ -856,6 +910,41 @@ function ppgal2_render_admin_page() {
                                        <?php checked( get_option( 'ppgal2_include_in_rss', true ) ); ?> />
                                 Include gallery items in the site's main RSS feed
                             </label>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="ppgal2_default_type">Default type filter</label></th>
+                        <td>
+                            <?php
+                            $default_type = get_option( 'ppgal2_default_type', '' );
+                            $type_terms   = get_terms( array( 'taxonomy' => PPGAL2_TAX_TYPE, 'hide_empty' => false ) );
+                            ?>
+                            <select name="ppgal2_default_type" id="ppgal2_default_type">
+                                <option value="">None (show all)</option>
+                                <?php if ( ! is_wp_error( $type_terms ) ) : ?>
+                                    <?php foreach ( $type_terms as $term ) : ?>
+                                        <option value="<?php echo esc_attr( $term->slug ); ?>" <?php selected( $default_type, $term->slug ); ?>>
+                                            <?php echo esc_html( $term->name ); ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
+                            </select>
+                            <p class="description">Pre-select this type filter when the gallery loads. URL parameter <code>?type=</code> overrides this.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="ppgal2_default_sort">Default sort</label></th>
+                        <td>
+                            <?php $default_sort = get_option( 'ppgal2_default_sort', 'date-desc' ); ?>
+                            <select name="ppgal2_default_sort" id="ppgal2_default_sort">
+                                <option value="date-desc" <?php selected( $default_sort, 'date-desc' ); ?>>Newest first</option>
+                                <option value="date-asc" <?php selected( $default_sort, 'date-asc' ); ?>>Oldest first</option>
+                                <option value="title-asc" <?php selected( $default_sort, 'title-asc' ); ?>>Title A-Z</option>
+                                <option value="title-desc" <?php selected( $default_sort, 'title-desc' ); ?>>Title Z-A</option>
+                                <option value="breed-asc" <?php selected( $default_sort, 'breed-asc' ); ?>>Breed A-Z</option>
+                                <option value="breed-desc" <?php selected( $default_sort, 'breed-desc' ); ?>>Breed Z-A</option>
+                            </select>
+                            <p class="description">Default sort order when the gallery loads. URL parameter <code>?sort=</code> overrides this.</p>
                         </td>
                     </tr>
                 </table>

@@ -24,6 +24,10 @@
 
 .pp-gallery__item figure {
     margin: 0;
+
+    a {
+        text-decoration: none;
+    }
 }
 
 /* Title text inside each thumb link -- hidden by default, shown in titles mode */
@@ -54,7 +58,7 @@
 
 .ppgal2-titles-mode .ppgal2-thumb-title {
     display: inline;
-    font-size: 14px;
+    font-size: 20px;
     color: #333;
     vertical-align: middle;
 }

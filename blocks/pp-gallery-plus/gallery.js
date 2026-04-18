@@ -458,14 +458,29 @@
   }
 
   /**
-   * Read URL params to pre-select filters and sort.
+   * Apply filter/sort defaults from settings, then override with URL params.
+   * Priority: URL param > settings page default > none.
    * Supports: ?type=street&breed=cat&tag=wip&sort=title-asc
    */
   function applyUrlParams() {
     var params = new URLSearchParams(window.location.search);
     var changed = false;
 
-    ["type", "breed", "tag"].forEach(function (key) {
+    // Default type from settings
+    var defaultType = block.dataset.defaultType || "";
+    var defaultSort = block.dataset.defaultSort || "date-desc";
+
+    // Apply type: URL param overrides settings default
+    var typeVal = params.get("type") || defaultType;
+    if (typeVal) {
+      filters["type"] = typeVal;
+      var typeSel = block.querySelector('.ppgal2-filter[data-taxonomy="type"]');
+      if (typeSel) typeSel.value = typeVal;
+      changed = true;
+    }
+
+    // Apply breed and tag from URL only (no settings default for these)
+    ["breed", "tag"].forEach(function (key) {
       var val = params.get(key);
       if (!val) return;
       filters[key] = val;
@@ -474,11 +489,12 @@
       changed = true;
     });
 
-    var sort = params.get("sort");
-    if (sort) {
-      currentSort = sort;
+    // Apply sort: URL param overrides settings default
+    var sortVal = params.get("sort") || defaultSort;
+    if (sortVal !== "date-desc") {
+      currentSort = sortVal;
       var sortSel = block.querySelector(".ppgal2-sort");
-      if (sortSel) sortSel.value = sort;
+      if (sortSel) sortSel.value = sortVal;
       changed = true;
     }
 

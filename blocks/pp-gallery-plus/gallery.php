@@ -37,7 +37,9 @@ $query = new WP_Query( array(
 <div class="ppgal2-block"
      data-per-page="<?php echo esc_attr( $per_page ); ?>"
      data-show-alt="<?php echo $show_alt ? '1' : '0'; ?>"
-     data-max-pages="<?php echo esc_attr( $query->max_num_pages ); ?>">
+     data-max-pages="<?php echo esc_attr( $query->max_num_pages ); ?>"
+     data-default-type="<?php echo esc_attr( get_option( 'ppgal2_default_type', '' ) ); ?>"
+     data-default-sort="<?php echo esc_attr( get_option( 'ppgal2_default_sort', 'date-desc' ) ); ?>">
 
     <!-- Filter bar -->
     <?php if ( $has_filters ) : ?>
@@ -80,7 +82,7 @@ $query = new WP_Query( array(
         </button>
 
         <button type="button" class="ppgal2-title-toggle" aria-label="Toggle view">
-            Titles
+            List
         </button>
 
         <select class="ppgal2-sort" aria-label="Sort by">
