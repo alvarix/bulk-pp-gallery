@@ -55,7 +55,7 @@ define( 'PPGAL2_TAX_TAG',   'ppgal2_tag' );    // Tag taxonomy
 
 The **Settings & Help** page under PP Gallery Items has two tabs:
 
-- **Settings** -- configure the default posts per page for infinite scroll (overridable per-block in the editor sidebar), and toggle whether gallery items appear in the site's main RSS feed.
+- **Settings** -- posts per page (overridable per-block), RSS feed inclusion toggle, default type filter, and default sort order.
 - **Help** -- filename convention reference and usage instructions.
 
 ## Taxonomies
@@ -82,7 +82,6 @@ Add the **PP Gallery Plus** block to any page.
 
 - **Posts per page** -- items per infinite scroll batch (defaults to the global setting)
 - **Show alternate thumbnails** -- use alt thumbs when available (default: on)
-- **Show titles** -- display post title below each thumbnail (default: off)
 
 **Frontend features:**
 
@@ -92,7 +91,8 @@ Add the **PP Gallery Plus** block to any page.
 - "Reset filters" button appears when any filter is active
 - Column selector adjusts grid from 1 to N columns
 - Scroll down to load more items automatically
-- Click any image to open the lightbox (arrow keys, swipe, Escape to close)
+- Click any image to open a full-screen lightbox (arrow keys, swipe, Escape to close)
+- URL parameters to pre-filter the gallery: `?type=street&breed=cat&sort=title-asc`
 
 ## Alternate thumbnail
 
