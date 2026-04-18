@@ -93,6 +93,7 @@ Add the **PP Gallery Plus** block to any page.
 - Scroll down to load more items automatically
 - Click any image to open a full-screen lightbox (arrow keys, swipe, Escape to close)
 - URL parameters to pre-filter the gallery: `?type=street&breed=cat&sort=title-asc`
+- `ppgal2_initial_query_args` filter hook allows themes to modify the initial query (e.g. server-side filtering from URL params to avoid AJAX flash)
 
 ## Alternate thumbnail
 

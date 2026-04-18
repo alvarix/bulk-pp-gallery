@@ -500,7 +500,10 @@
 
     if (changed) {
       updateResetButton();
-      reloadGallery();
+      // Skip AJAX reload if server already rendered with the filter applied
+      if (block.dataset.prefiltered !== "1") {
+        reloadGallery();
+      }
     }
   }
 

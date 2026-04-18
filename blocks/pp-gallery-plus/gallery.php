@@ -25,13 +25,13 @@ $has_filters = ( ! is_wp_error( $types ) && ! empty( $types ) )
             || ( ! is_wp_error( $breeds ) && ! empty( $breeds ) )
             || ( ! is_wp_error( $tags ) && ! empty( $tags ) );
 
-// Initial query.
-$query = new WP_Query( array(
+// Initial query. Filterable via 'ppgal2_initial_query_args' hook.
+$query = new WP_Query( apply_filters( 'ppgal2_initial_query_args', array(
     'post_type'      => 'ppgal2',
     'posts_per_page' => $per_page,
     'paged'          => 1,
     'post_status'    => 'publish',
-) );
+) ) );
 ?>
 
 <div class="ppgal2-block"
@@ -39,7 +39,8 @@ $query = new WP_Query( array(
      data-show-alt="<?php echo $show_alt ? '1' : '0'; ?>"
      data-max-pages="<?php echo esc_attr( $query->max_num_pages ); ?>"
      data-default-type="<?php echo esc_attr( get_option( 'ppgal2_default_type', '' ) ); ?>"
-     data-default-sort="<?php echo esc_attr( get_option( 'ppgal2_default_sort', 'date-desc' ) ); ?>">
+     data-default-sort="<?php echo esc_attr( get_option( 'ppgal2_default_sort', 'date-desc' ) ); ?>"
+     data-prefiltered="<?php echo ! empty( $query->query_vars['tax_query'] ) ? '1' : '0'; ?>">
 
     <!-- Filter bar -->
     <?php if ( $has_filters ) : ?>
