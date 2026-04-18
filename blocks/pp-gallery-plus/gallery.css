@@ -34,6 +34,8 @@
 /* Titles mode: flat list with small thumbnail */
 .ppgal2-titles-mode .pp-gallery {
     display: block;
+    max-width: 600px;
+    margin: 0 auto;
 }
 
 .ppgal2-titles-mode .pp-gallery li {
