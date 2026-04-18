@@ -14,7 +14,7 @@ $per_page        = isset( $attributes['postsPerPage'] ) && $attributes['postsPer
 $show_alt        = isset( $attributes['showAltThumbs'] ) ? (bool) $attributes['showAltThumbs'] : true;
 $show_titles     = isset( $attributes['showTitles'] ) ? (bool) $attributes['showTitles'] : false;
 
-$class_name = 'pp-gallery';
+$class_name = 'pp-gallery full-width-wp-gallery';
 if ( ! empty( $attributes['className'] ) ) {
     $class_name .= ' ' . $attributes['className'];
 }
