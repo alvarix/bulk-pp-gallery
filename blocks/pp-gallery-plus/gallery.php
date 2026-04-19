@@ -25,13 +25,41 @@ $has_filters = ( ! is_wp_error( $types ) && ! empty( $types ) )
             || ( ! is_wp_error( $breeds ) && ! empty( $breeds ) )
             || ( ! is_wp_error( $tags ) && ! empty( $tags ) );
 
-// Initial query. Filterable via 'ppgal2_initial_query_args' hook.
-$query = new WP_Query( apply_filters( 'ppgal2_initial_query_args', array(
+// Build initial query args with default type/sort from settings.
+$default_type = get_option( 'ppgal2_default_type', '' );
+$default_sort = get_option( 'ppgal2_default_sort', 'date-desc' );
+
+$initial_args = array(
     'post_type'      => 'ppgal2',
     'posts_per_page' => $per_page,
     'paged'          => 1,
     'post_status'    => 'publish',
-) ) );
+);
+
+if ( $default_type ) {
+    $initial_args['tax_query'] = array( array(
+        'taxonomy' => 'ppgal2_type',
+        'field'    => 'slug',
+        'terms'    => $default_type,
+    ) );
+}
+
+if ( $default_sort && $default_sort !== 'date-desc' ) {
+    $sort_parts = explode( '-', $default_sort, 2 );
+    $sort_field = $sort_parts[0];
+    $sort_dir   = strtoupper( $sort_parts[1] ?? 'DESC' );
+
+    if ( $sort_field === 'breed' ) {
+        $initial_args['orderby']  = array( 'meta_value' => $sort_dir, 'ID' => $sort_dir );
+        $initial_args['meta_key'] = '_ppgal2_breed_sort';
+    } else {
+        $field = $sort_field === 'title' ? 'title' : 'date';
+        $initial_args['orderby'] = array( $field => $sort_dir, 'ID' => $sort_dir );
+    }
+}
+
+// Filterable via 'ppgal2_initial_query_args' hook (e.g. theme reads URL params).
+$query = new WP_Query( apply_filters( 'ppgal2_initial_query_args', $initial_args ) );
 ?>
 
 <div class="ppgal2-block"
