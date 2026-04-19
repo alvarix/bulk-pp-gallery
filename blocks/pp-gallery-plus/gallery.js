@@ -129,7 +129,7 @@
     btn.addEventListener("click", function () {
       var active = block.classList.toggle("ppgal2-titles-mode");
       btn.classList.toggle("active", active);
-      btn.textContent = active ? "Thumbs" : "Titles";
+      btn.textContent = active ? "Thumbs View" : "List View";
     });
   }
 
