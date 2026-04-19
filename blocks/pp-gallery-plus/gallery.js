@@ -76,6 +76,9 @@
     selects.forEach(function (sel) {
       sel.addEventListener("change", function () {
         filters[this.dataset.taxonomy] = this.value;
+        if (this.dataset.taxonomy === "type") {
+          syncBreedOptions(this.value);
+        }
         updateResetButton();
         reloadGallery();
       });
@@ -87,9 +90,39 @@
         selects.forEach(function (sel) {
           sel.value = "";
         });
+        syncBreedOptions("");
         updateResetButton();
         reloadGallery();
       });
+    }
+  }
+
+  /**
+   * Show only breed options that belong to the selected type.
+   * When typeSlug is empty, restore all options.
+   *
+   * @param {string} typeSlug The selected type slug, or "" for no filter.
+   */
+  function syncBreedOptions(typeSlug) {
+    var breedSel = block.querySelector('.ppgal2-filter[data-taxonomy="breed"]');
+    if (!breedSel) return;
+
+    var map = {};
+    try {
+      map = JSON.parse(block.dataset.breedByType || "{}");
+    } catch (e) {}
+
+    var allowed = typeSlug ? (map[typeSlug] || []) : null;
+
+    Array.from(breedSel.options).forEach(function (opt) {
+      if (!opt.value) return; // always keep "All Breeds"
+      opt.hidden = allowed !== null && allowed.indexOf(opt.value) === -1;
+    });
+
+    // Reset breed selection if it's no longer visible
+    if (breedSel.value && breedSel.options[breedSel.selectedIndex].hidden) {
+      breedSel.value = "";
+      filters["breed"] = "";
     }
   }
 
@@ -478,6 +511,7 @@
       if (typeSel) typeSel.value = typeVal;
       changed = true;
     }
+    syncBreedOptions(typeVal);
 
     // Apply breed and tag from URL only (no settings default for these)
     ["breed", "tag"].forEach(function (key) {

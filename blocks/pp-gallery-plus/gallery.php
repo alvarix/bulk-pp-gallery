@@ -25,6 +25,34 @@ $has_filters = ( ! is_wp_error( $types ) && ! empty( $types ) )
             || ( ! is_wp_error( $breeds ) && ! empty( $breeds ) )
             || ( ! is_wp_error( $tags ) && ! empty( $tags ) );
 
+// Build type→breeds map for client-side filtering.
+$breed_by_type = array();
+if ( ! is_wp_error( $types ) ) {
+    foreach ( $types as $type_term ) {
+        $post_ids = get_posts( array(
+            'post_type'      => 'ppgal2',
+            'posts_per_page' => -1,
+            'fields'         => 'ids',
+            'post_status'    => 'publish',
+            'tax_query'      => array( array(
+                'taxonomy' => 'ppgal2_type',
+                'field'    => 'slug',
+                'terms'    => $type_term->slug,
+            ) ),
+        ) );
+        if ( ! empty( $post_ids ) ) {
+            $type_breeds = get_terms( array(
+                'taxonomy'   => 'ppgal2_breed',
+                'hide_empty' => false,
+                'object_ids' => $post_ids,
+            ) );
+            if ( ! is_wp_error( $type_breeds ) && ! empty( $type_breeds ) ) {
+                $breed_by_type[ $type_term->slug ] = wp_list_pluck( $type_breeds, 'slug' );
+            }
+        }
+    }
+}
+
 // Build initial query args with default type/sort from settings.
 $default_type = get_option( 'ppgal2_default_type', '' );
 $default_sort = get_option( 'ppgal2_default_sort', 'date-desc' );
@@ -70,6 +98,7 @@ $query = new WP_Query( apply_filters( 'ppgal2_initial_query_args', $initial_args
      data-max-pages="<?php echo esc_attr( $query->max_num_pages ); ?>"
      data-default-type="<?php echo esc_attr( get_option( 'ppgal2_default_type', '' ) ); ?>"
      data-default-sort="<?php echo esc_attr( get_option( 'ppgal2_default_sort', 'order-desc' ) ); ?>"
+     data-breed-by-type="<?php echo esc_attr( wp_json_encode( $breed_by_type ) ); ?>"
      data-prefiltered="<?php echo ! empty( $query->query_vars['tax_query'] ) ? '1' : '0'; ?>">
 
     <!-- Filter bar -->
