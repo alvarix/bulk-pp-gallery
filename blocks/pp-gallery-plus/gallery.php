@@ -119,8 +119,10 @@ $query = new WP_Query( apply_filters( 'ppgal2_initial_query_args', $initial_args
             <select class="ppgal2-filter" data-taxonomy="breed" aria-label="Filter by breed">
                 <option value="">All Breeds</option>
                 <?php foreach ( $breeds as $term ) : ?>
-                    <option value="<?php echo esc_attr( $term->slug ); ?>">
-                        <?php echo esc_html( $term->name ); ?> (<?php echo $term->count; ?>)
+                    <option value="<?php echo esc_attr( $term->slug ); ?>"
+                            data-name="<?php echo esc_attr( $term->name ); ?>"
+                            data-count="<?php echo (int) $term->count; ?>">
+                        <?php echo esc_html( $term->name ); ?> (<?php echo (int) $term->count; ?>)
                     </option>
                 <?php endforeach; ?>
             </select>

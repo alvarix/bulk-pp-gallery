@@ -117,6 +117,13 @@
     Array.from(breedSel.options).forEach(function (opt) {
       if (!opt.value) return; // always keep "All Breeds"
       opt.hidden = allowed !== null && allowed.indexOf(opt.value) === -1;
+
+      // Show counts only when no type is selected
+      if (opt.dataset.name) {
+        opt.textContent = allowed === null
+          ? opt.dataset.name + " (" + opt.dataset.count + ")"
+          : opt.dataset.name;
+      }
     });
 
     // Reset breed selection if it's no longer visible
