@@ -50,7 +50,7 @@ function ppgal2_register_cpt() {
         'has_archive'  => true,
         'show_in_rest' => true,
         'menu_icon'    => 'dashicons-format-gallery',
-        'supports'     => array( 'title', 'editor', 'thumbnail' ),
+        'supports'     => array( 'title', 'editor', 'thumbnail', 'page-attributes' ),
         'rewrite'      => array( 'slug' => 'gallery' ),
     ) );
 }
@@ -90,6 +90,46 @@ function ppgal2_render_thumb_column( $column, $post_id ) {
     if ( $thumb ) {
         echo '<img src="' . esc_url( $thumb ) . '" style="width:50px;height:50px;object-fit:cover;" />';
     }
+}
+
+// =========================================================================
+// 1c. Admin list Order column (menu_order)
+// =========================================================================
+add_filter( 'manage_' . PPGAL2_CPT . '_posts_columns', 'ppgal2_add_order_column' );
+add_action( 'manage_' . PPGAL2_CPT . '_posts_custom_column', 'ppgal2_render_order_column', 10, 2 );
+add_filter( 'manage_edit-' . PPGAL2_CPT . '_sortable_columns', 'ppgal2_order_sortable' );
+
+/**
+ * Append an Order column to the admin list table.
+ *
+ * @param array $columns Existing columns.
+ * @return array Modified columns.
+ */
+function ppgal2_add_order_column( $columns ) {
+    $columns['ppgal2_order'] = 'Order';
+    return $columns;
+}
+
+/**
+ * Render the menu_order value in the Order column.
+ *
+ * @param string $column  Column name.
+ * @param int    $post_id Post ID.
+ */
+function ppgal2_render_order_column( $column, $post_id ) {
+    if ( $column !== 'ppgal2_order' ) return;
+    echo (int) get_post_field( 'menu_order', $post_id );
+}
+
+/**
+ * Make the Order column sortable in the admin list.
+ *
+ * @param array $columns Sortable columns.
+ * @return array Modified sortable columns.
+ */
+function ppgal2_order_sortable( $columns ) {
+    $columns['ppgal2_order'] = 'menu_order';
+    return $columns;
 }
 
 // =========================================================================
@@ -594,13 +634,14 @@ function ppgal2_ajax_load_more() {
     }
 
     // Sort handling
-    $sort = isset( $_GET['sort'] ) ? sanitize_text_field( $_GET['sort'] ) : 'date-desc';
+    $sort = isset( $_GET['sort'] ) ? sanitize_text_field( $_GET['sort'] ) : 'order-desc';
     $sort_parts = explode( '-', $sort, 2 );
     $sort_field = $sort_parts[0];
     $sort_dir   = isset( $sort_parts[1] ) ? strtoupper( $sort_parts[1] ) : 'DESC';
 
-    if ( $sort_field === 'breed' ) {
-        // Sort by breed taxonomy term name, then ID for stable pagination
+    if ( $sort_field === 'order' ) {
+        $args['orderby'] = array( 'menu_order' => $sort_dir, 'date' => 'DESC', 'ID' => 'DESC' );
+    } elseif ( $sort_field === 'breed' ) {
         $args['orderby']  = array( 'meta_value' => $sort_dir, 'ID' => $sort_dir );
         $args['meta_key'] = '_ppgal2_breed_sort';
     } else {
@@ -936,6 +977,7 @@ function ppgal2_render_admin_page() {
                         <td>
                             <?php $default_sort = get_option( 'ppgal2_default_sort', 'date-desc' ); ?>
                             <select name="ppgal2_default_sort" id="ppgal2_default_sort">
+                                <option value="order-desc" <?php selected( $default_sort, 'order-desc' ); ?>>Custom order</option>
                                 <option value="date-desc" <?php selected( $default_sort, 'date-desc' ); ?>>Newest first</option>
                                 <option value="date-asc" <?php selected( $default_sort, 'date-asc' ); ?>>Oldest first</option>
                                 <option value="title-asc" <?php selected( $default_sort, 'title-asc' ); ?>>Title A-Z</option>

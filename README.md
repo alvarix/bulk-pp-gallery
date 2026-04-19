@@ -28,7 +28,7 @@ Examples:
 
 A Gutenberg block that renders a responsive image grid with:
 
-- **Filter dropdowns** for Type, Breed, and Tag taxonomies with a reset button
+- **Filter dropdowns** for Type and Breed taxonomies (with counts) and a reset button
 - **Column selector** to adjust grid layout on the fly
 - **Infinite scroll** loading via AJAX
 - **Lightbox** with keyboard navigation, touch swipe, and adjacent post prefetching for instant prev/next
@@ -85,14 +85,15 @@ Add the **PP Gallery Plus** block to any page.
 
 **Frontend features:**
 
-- Filter dropdowns narrow results by Type, Breed, or Tag
-- Sort by date, title, or breed
+- Filter dropdowns narrow results by Type or Breed (with post counts)
+- Sort by custom order, date, title, or breed
 - Titles/Thumbs toggle switches between image grid and flat title list with small thumbnails
 - "Reset filters" button appears when any filter is active
 - Column selector adjusts grid from 1 to N columns
 - Scroll down to load more items automatically
 - Click any image to open a full-screen lightbox (arrow keys, swipe, Escape to close)
-- URL parameters to pre-filter the gallery: `?type=street&breed=cat&sort=title-asc`
+- **Custom order** via `menu_order` field, editable from the admin list view
+- URL parameters to pre-filter the gallery: `?type=street&breed=cat&sort=order-desc`
 - `ppgal2_initial_query_args` filter hook allows themes to modify the initial query (e.g. server-side filtering from URL params to avoid AJAX flash)
 
 ## Alternate thumbnail

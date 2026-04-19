@@ -16,7 +16,7 @@
   // -----------------------------------------------------------------------
   var block, gallery, ajaxUrl, perPage, showAlt, currentPage, maxPages, loading;
   var filters = {};
-  var currentSort = "date-desc";
+  var currentSort = "order-desc";
 
   // -----------------------------------------------------------------------
   // 1. Column selector
@@ -468,7 +468,7 @@
 
     // Default type from settings
     var defaultType = block.dataset.defaultType || "";
-    var defaultSort = block.dataset.defaultSort || "date-desc";
+    var defaultSort = block.dataset.defaultSort || "order-desc";
 
     // Apply type: URL param overrides settings default
     var typeVal = params.get("type") || defaultType;
@@ -491,10 +491,10 @@
 
     // Apply sort: URL param overrides settings default
     var sortVal = params.get("sort") || defaultSort;
-    if (sortVal !== "date-desc") {
-      currentSort = sortVal;
-      var sortSel = block.querySelector(".ppgal2-sort");
-      if (sortSel) sortSel.value = sortVal;
+    currentSort = sortVal;
+    var sortSel = block.querySelector(".ppgal2-sort");
+    if (sortSel) sortSel.value = sortVal;
+    if (params.get("sort") && params.get("sort") !== defaultSort) {
       changed = true;
     }
 

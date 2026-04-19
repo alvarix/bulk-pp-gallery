@@ -44,18 +44,20 @@ if ( $default_type ) {
     ) );
 }
 
-if ( $default_sort && $default_sort !== 'date-desc' ) {
-    $sort_parts = explode( '-', $default_sort, 2 );
-    $sort_field = $sort_parts[0];
-    $sort_dir   = strtoupper( $sort_parts[1] ?? 'DESC' );
+// Apply sort -- default to custom order (menu_order DESC, then date DESC).
+$active_sort = $default_sort ?: 'order-desc';
+$sort_parts  = explode( '-', $active_sort, 2 );
+$sort_field  = $sort_parts[0];
+$sort_dir    = strtoupper( $sort_parts[1] ?? 'DESC' );
 
-    if ( $sort_field === 'breed' ) {
-        $initial_args['orderby']  = array( 'meta_value' => $sort_dir, 'ID' => $sort_dir );
-        $initial_args['meta_key'] = '_ppgal2_breed_sort';
-    } else {
-        $field = $sort_field === 'title' ? 'title' : 'date';
-        $initial_args['orderby'] = array( $field => $sort_dir, 'ID' => $sort_dir );
-    }
+if ( $sort_field === 'order' ) {
+    $initial_args['orderby'] = array( 'menu_order' => $sort_dir, 'date' => 'DESC', 'ID' => 'DESC' );
+} elseif ( $sort_field === 'breed' ) {
+    $initial_args['orderby']  = array( 'meta_value' => $sort_dir, 'ID' => $sort_dir );
+    $initial_args['meta_key'] = '_ppgal2_breed_sort';
+} else {
+    $field = $sort_field === 'title' ? 'title' : 'date';
+    $initial_args['orderby'] = array( $field => $sort_dir, 'ID' => $sort_dir );
 }
 
 // Filterable via 'ppgal2_initial_query_args' hook (e.g. theme reads URL params).
@@ -67,7 +69,7 @@ $query = new WP_Query( apply_filters( 'ppgal2_initial_query_args', $initial_args
      data-show-alt="<?php echo $show_alt ? '1' : '0'; ?>"
      data-max-pages="<?php echo esc_attr( $query->max_num_pages ); ?>"
      data-default-type="<?php echo esc_attr( get_option( 'ppgal2_default_type', '' ) ); ?>"
-     data-default-sort="<?php echo esc_attr( get_option( 'ppgal2_default_sort', 'date-desc' ) ); ?>"
+     data-default-sort="<?php echo esc_attr( get_option( 'ppgal2_default_sort', 'order-desc' ) ); ?>"
      data-prefiltered="<?php echo ! empty( $query->query_vars['tax_query'] ) ? '1' : '0'; ?>">
 
     <!-- Filter bar -->
@@ -104,6 +106,7 @@ $query = new WP_Query( apply_filters( 'ppgal2_initial_query_args', $initial_args
         </button>
 
         <select class="ppgal2-sort" aria-label="Sort by">
+            <option value="order-desc">Custom order</option>
             <option value="date-desc">Newest first</option>
             <option value="date-asc">Oldest first</option>
             <option value="title-asc">Title A-Z</option>
