@@ -89,18 +89,7 @@ $query = new WP_Query( apply_filters( 'ppgal2_initial_query_args', $initial_args
                 <option value="">All Breeds</option>
                 <?php foreach ( $breeds as $term ) : ?>
                     <option value="<?php echo esc_attr( $term->slug ); ?>">
-                        <?php echo esc_html( $term->name ); ?>
-                    </option>
-                <?php endforeach; ?>
-            </select>
-        <?php endif; ?>
-
-        <?php if ( ! is_wp_error( $tags ) && ! empty( $tags ) ) : ?>
-            <select class="ppgal2-filter" data-taxonomy="tag" aria-label="Filter by tag">
-                <option value="">All Tags</option>
-                <?php foreach ( $tags as $term ) : ?>
-                    <option value="<?php echo esc_attr( $term->slug ); ?>">
-                        <?php echo esc_html( $term->name ); ?>
+                        <?php echo esc_html( $term->name ); ?> (<?php echo $term->count; ?>)
                     </option>
                 <?php endforeach; ?>
             </select>
@@ -111,7 +100,7 @@ $query = new WP_Query( apply_filters( 'ppgal2_initial_query_args', $initial_args
         </button>
 
         <button type="button" class="ppgal2-title-toggle" aria-label="Toggle view">
-            List
+            List View
         </button>
 
         <select class="ppgal2-sort" aria-label="Sort by">
