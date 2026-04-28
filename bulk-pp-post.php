@@ -427,8 +427,18 @@ function ppgal2_parse_filename( $filename ) {
     if ( $count === 1 ) {
         $result['title'] = ucwords( str_replace( array( '-', '_' ), ' ', $segments[0] ) );
     } elseif ( $count === 2 ) {
-        $result['type']  = ucwords( str_replace( array( '-', '_' ), ' ', $segments[0] ) );
-        $result['title'] = ucwords( str_replace( array( '-', '_' ), ' ', $segments[1] ) );
+        $result['title'] = ucwords( str_replace( array( '-', '_' ), ' ', $segments[0] ) );
+        $breed_tags2 = explode( '.', $segments[1] );
+        if ( ! empty( $breed_tags2[0] ) ) {
+            $raw_breeds2 = array_filter( explode( '_', $breed_tags2[0] ) );
+            $result['breeds'] = array_values( array_map( function( $b ) {
+                return ucwords( str_replace( '-', ' ', trim( $b ) ) );
+            }, $raw_breeds2 ) );
+        }
+        $raw_tags2 = array_slice( $breed_tags2, 1 );
+        $result['tags'] = array_values( array_filter( array_map( function( $t ) {
+            return trim( str_replace( array( '-', '_' ), ' ', $t ) );
+        }, $raw_tags2 ) ) );
     } else {
         $result['type']  = ucwords( str_replace( array( '-', '_' ), ' ', $segments[0] ) );
         $result['title'] = ucwords( str_replace( array( '-', '_' ), ' ', $segments[1] ) );
