@@ -9,20 +9,22 @@ A WordPress plugin for bulk-generating gallery posts from media library images, 
 Select images in the Media Library, choose the bulk action, and the plugin creates a `ppgal2` post for each image. Post title, type, breed, and tags are parsed automatically from the filename convention:
 
 ```
-title.ext                              -> Title only
-type__title.ext                        -> Type + Title
-type__title__breed.tag1.tag2.ext       -> Type + Title + Breed + Tags
+title.ext                                    -> Title only
+type__title.ext                              -> Type + Title
+type__title__breed.tag1.tag2.ext             -> Type + Title + Breed + Tags
+type__title__breed1+breed2.tag1.tag2.ext     -> Type + Title + Multiple Breeds + Tags
 ```
 
-Uses `__` (double underscore) as delimiter because WordPress `sanitize_file_name()` collapses `--` into `-` on upload. WordPress-appended suffixes like `-scaled` and `-rotated` are stripped before parsing.
+Uses `__` (double underscore) as the segment delimiter because WordPress `sanitize_file_name()` collapses `--` into `-` on upload. Use `+` inside the breed segment to assign multiple breeds. WordPress-appended suffixes like `-scaled` and `-rotated` are stripped before parsing.
 
 Examples:
 
-| Filename | Title | Type | Breed | Tags |
+| Filename | Title | Type | Breed(s) | Tags |
 |---|---|---|---|---|
 | `fluffy-boy.jpg` | Fluffy Boy | -- | -- | -- |
 | `street__big-sunset.jpg` | Big Sunset | Street | -- | -- |
 | `studio__portrait__yorkie.wip.adoption.jpg` | Portrait | Studio | Yorkie | wip, adoption |
+| `studio__portrait__yorkie+labrador.wip.jpg` | Portrait | Studio | Yorkie, Labrador | wip |
 
 **Part 2 -- PP Gallery Plus block**
 

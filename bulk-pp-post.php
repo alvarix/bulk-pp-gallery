@@ -413,14 +413,14 @@ add_action( 'wp_ajax_ppgal2_bulk_create', 'ppgal2_ajax_bulk_create' );
  * before parsing.
  *
  * @param string $filename Filename without extension.
- * @return array { title: string, type: string|null, breed: string|null, tags: string[] }
+ * @return array { title: string, type: string|null, breeds: string[], tags: string[] }
  */
 function ppgal2_parse_filename( $filename ) {
     // Strip WP-appended suffixes (-scaled, -rotated, dimension suffixes like -1024x768)
     $filename = preg_replace( '/-(scaled|rotated|\d+x\d+)$/', '', $filename );
 
     $segments = explode( '__', $filename );
-    $result   = array( 'title' => '', 'type' => null, 'breed' => null, 'tags' => array() );
+    $result   = array( 'title' => '', 'type' => null, 'breeds' => array(), 'tags' => array() );
 
     $count = count( $segments );
 
@@ -435,7 +435,10 @@ function ppgal2_parse_filename( $filename ) {
 
         $breed_tags = explode( '.', $segments[2] );
         if ( ! empty( $breed_tags[0] ) ) {
-            $result['breed'] = ucwords( str_replace( array( '-', '_' ), ' ', $breed_tags[0] ) );
+            $raw_breeds = array_filter( explode( '+', $breed_tags[0] ) );
+            $result['breeds'] = array_values( array_map( function( $b ) {
+                return ucwords( str_replace( array( '-', '_' ), ' ', trim( $b ) ) );
+            }, $raw_breeds ) );
         }
         // Clean tag values: trim whitespace, strip hyphens/underscores, drop empties
         $raw_tags = array_slice( $breed_tags, 1 );
@@ -493,8 +496,8 @@ function ppgal2_ajax_bulk_create() {
         if ( $parsed['type'] ) {
             wp_set_object_terms( $post_id, $parsed['type'], PPGAL2_TAX_TYPE );
         }
-        if ( $parsed['breed'] ) {
-            wp_set_object_terms( $post_id, $parsed['breed'], PPGAL2_TAX_BREED );
+        if ( ! empty( $parsed['breeds'] ) ) {
+            wp_set_object_terms( $post_id, $parsed['breeds'], PPGAL2_TAX_BREED );
         }
         if ( ! empty( $parsed['tags'] ) ) {
             wp_set_object_terms( $post_id, $parsed['tags'], PPGAL2_TAX_TAG );
@@ -544,7 +547,7 @@ function ppgal2_bulk_action_modal() {
             <h2>Create PP Gallery Posts</h2>
             <p class="ppgal2-modal-count"></p>
             <p class="description">Filenames will be parsed automatically:<br>
-                <code>type__title__breed.tag1.tag2.ext</code></p>
+                <code>type__title__breed1+breed2.tag1.tag2.ext</code></p>
             <div class="ppgal2-modal-actions">
                 <button type="button" class="button button-primary" id="ppgal2-modal-confirm">Create Posts</button>
                 <button type="button" class="button" id="ppgal2-modal-cancel">Cancel</button>
@@ -998,8 +1001,8 @@ function ppgal2_render_admin_page() {
         <!-- Help tab -->
         <div id="ppgal2-tab-help" style="display:none;">
             <h2>Filename Convention</h2>
-            <p>Name your image files before uploading. Use <code>__</code> (double underscore) as the delimiter between segments. WordPress strips double hyphens on upload, so <code>--</code> will not work.</p>
-            <table class="widefat fixed" style="max-width:600px;">
+            <p>Name your image files before uploading. Use <code>__</code> (double underscore) as the segment delimiter. Use <code>+</code> to assign multiple breeds. WordPress strips double hyphens on upload, so <code>--</code> will not work.</p>
+            <table class="widefat fixed" style="max-width:660px;">
                 <thead><tr><th>Filename</th><th>Result</th></tr></thead>
                 <tbody>
                     <tr>
@@ -1013,6 +1016,10 @@ function ppgal2_render_admin_page() {
                     <tr>
                         <td><code>studio__fluffy-boy__yorkie.wip.adoption.jpg</code></td>
                         <td>Type: Studio, Title: "Fluffy Boy", Breed: Yorkie, Tags: wip, adoption</td>
+                    </tr>
+                    <tr>
+                        <td><code>studio__fluffy-boy__yorkie+labrador.wip.jpg</code></td>
+                        <td>Type: Studio, Title: "Fluffy Boy", Breeds: Yorkie, Labrador, Tags: wip</td>
                     </tr>
                 </tbody>
             </table>
