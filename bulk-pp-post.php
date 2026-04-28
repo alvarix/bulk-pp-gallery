@@ -435,9 +435,9 @@ function ppgal2_parse_filename( $filename ) {
 
         $breed_tags = explode( '.', $segments[2] );
         if ( ! empty( $breed_tags[0] ) ) {
-            $raw_breeds = array_filter( explode( '+', $breed_tags[0] ) );
+            $raw_breeds = array_filter( explode( '_', $breed_tags[0] ) );
             $result['breeds'] = array_values( array_map( function( $b ) {
-                return ucwords( str_replace( array( '-', '_' ), ' ', trim( $b ) ) );
+                return ucwords( str_replace( '-', ' ', trim( $b ) ) );
             }, $raw_breeds ) );
         }
         // Clean tag values: trim whitespace, strip hyphens/underscores, drop empties
@@ -547,7 +547,7 @@ function ppgal2_bulk_action_modal() {
             <h2>Create PP Gallery Posts</h2>
             <p class="ppgal2-modal-count"></p>
             <p class="description">Filenames will be parsed automatically:<br>
-                <code>type__title__breed1+breed2.tag1.tag2.ext</code></p>
+                <code>type__title__breed1_breed2.tag1.tag2.ext</code></p>
             <div class="ppgal2-modal-actions">
                 <button type="button" class="button button-primary" id="ppgal2-modal-confirm">Create Posts</button>
                 <button type="button" class="button" id="ppgal2-modal-cancel">Cancel</button>
@@ -1001,7 +1001,7 @@ function ppgal2_render_admin_page() {
         <!-- Help tab -->
         <div id="ppgal2-tab-help" style="display:none;">
             <h2>Filename Convention</h2>
-            <p>Name your image files before uploading. Use <code>__</code> (double underscore) as the segment delimiter. Use <code>+</code> to assign multiple breeds. WordPress strips double hyphens on upload, so <code>--</code> will not work.</p>
+            <p>Name your image files before uploading. Use <code>__</code> (double underscore) as the segment delimiter. Separate multiple breeds with <code>_</code> (single underscore); use <code>-</code> for spaces within a breed name. WordPress strips <code>--</code> and <code>+</code> on upload — neither will work as a delimiter.</p>
             <table class="widefat fixed" style="max-width:660px;">
                 <thead><tr><th>Filename</th><th>Result</th></tr></thead>
                 <tbody>
@@ -1018,7 +1018,7 @@ function ppgal2_render_admin_page() {
                         <td>Type: Studio, Title: "Fluffy Boy", Breed: Yorkie, Tags: wip, adoption</td>
                     </tr>
                     <tr>
-                        <td><code>studio__fluffy-boy__yorkie+labrador.wip.jpg</code></td>
+                        <td><code>studio__fluffy-boy__yorkie_labrador.wip.jpg</code></td>
                         <td>Type: Studio, Title: "Fluffy Boy", Breeds: Yorkie, Labrador, Tags: wip</td>
                     </tr>
                 </tbody>

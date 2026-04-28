@@ -24,9 +24,9 @@ function ppgal2_parse_filename( $filename ) {
 
         $breed_tags = explode( '.', $segments[2] );
         if ( ! empty( $breed_tags[0] ) ) {
-            $raw_breeds = array_filter( explode( '+', $breed_tags[0] ) );
+            $raw_breeds = array_filter( explode( '_', $breed_tags[0] ) );
             $result['breeds'] = array_values( array_map( function( $b ) {
-                return ucwords( str_replace( array( '-', '_' ), ' ', trim( $b ) ) );
+                return ucwords( str_replace( '-', ' ', trim( $b ) ) );
             }, $raw_breeds ) );
         }
         $raw_tags = array_slice( $breed_tags, 1 );
@@ -93,20 +93,25 @@ $tests = array(
         'studio__portrait__yorkie.wip..adoption',
         array( 'title' => 'Portrait', 'type' => 'Studio', 'breeds' => array( 'Yorkie' ), 'tags' => array( 'wip', 'adoption' ) ),
     ),
-    // Multiple breeds via + delimiter
+    // Multiple breeds via _ delimiter
     array(
-        'studio__fluffy-boy__yorkie+labrador.wip.adoption',
+        'studio__fluffy-boy__yorkie_labrador.wip.adoption',
         array( 'title' => 'Fluffy Boy', 'type' => 'Studio', 'breeds' => array( 'Yorkie', 'Labrador' ), 'tags' => array( 'wip', 'adoption' ) ),
     ),
     // Multiple breeds with hyphens normalised to spaces
     array(
-        'studio__portrait__golden-retriever+border-collie.wip',
+        'studio__portrait__golden-retriever_border-collie.wip',
         array( 'title' => 'Portrait', 'type' => 'Studio', 'breeds' => array( 'Golden Retriever', 'Border Collie' ), 'tags' => array( 'wip' ) ),
     ),
     // Multiple breeds, no tags
     array(
-        'street__sunset__yorkie+poodle',
+        'street__sunset__yorkie_poodle',
         array( 'title' => 'Sunset', 'type' => 'Street', 'breeds' => array( 'Yorkie', 'Poodle' ), 'tags' => array() ),
+    ),
+    // Real-world case: cat + bengal
+    array(
+        'studio__Noodle__cat_bengal',
+        array( 'title' => 'Noodle', 'type' => 'Studio', 'breeds' => array( 'Cat', 'Bengal' ), 'tags' => array() ),
     ),
 );
 

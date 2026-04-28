@@ -12,10 +12,12 @@ Select images in the Media Library, choose the bulk action, and the plugin creat
 title.ext                                    -> Title only
 type__title.ext                              -> Type + Title
 type__title__breed.tag1.tag2.ext             -> Type + Title + Breed + Tags
-type__title__breed1+breed2.tag1.tag2.ext     -> Type + Title + Multiple Breeds + Tags
+type__title__breed1_breed2.tag1.tag2.ext     -> Type + Title + Multiple Breeds + Tags
 ```
 
-Uses `__` (double underscore) as the segment delimiter because WordPress `sanitize_file_name()` collapses `--` into `-` on upload. Use `+` inside the breed segment to assign multiple breeds. WordPress-appended suffixes like `-scaled` and `-rotated` are stripped before parsing.
+Uses `__` (double underscore) as the segment delimiter because WordPress `sanitize_file_name()` collapses `--` into `-` on upload. Use `_` (single underscore) inside the breed segment to assign multiple breeds; use `-` for spaces within a breed name. WordPress also strips `+` on upload — it cannot be used as a delimiter.
+
+WordPress-appended suffixes like `-scaled` and `-rotated` are stripped before parsing.
 
 Examples:
 
@@ -24,7 +26,7 @@ Examples:
 | `fluffy-boy.jpg` | Fluffy Boy | -- | -- | -- |
 | `street__big-sunset.jpg` | Big Sunset | Street | -- | -- |
 | `studio__portrait__yorkie.wip.adoption.jpg` | Portrait | Studio | Yorkie | wip, adoption |
-| `studio__portrait__yorkie+labrador.wip.jpg` | Portrait | Studio | Yorkie, Labrador | wip |
+| `studio__portrait__yorkie_labrador.wip.jpg` | Portrait | Studio | Yorkie, Labrador | wip |
 
 **Part 2 -- PP Gallery Plus block**
 
