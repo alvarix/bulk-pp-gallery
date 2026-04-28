@@ -557,7 +557,8 @@ function ppgal2_bulk_action_modal() {
             <h2>Create PP Gallery Posts</h2>
             <p class="ppgal2-modal-count"></p>
             <p class="description">Filenames will be parsed automatically:<br>
-                <code>type__title__breed1_breed2.tag1.tag2.ext</code></p>
+                <code>title__breed.tags.ext</code> &mdash; title + breed + tags<br>
+                <code>type__title__breed1_breed2.tags.ext</code> &mdash; adds type</p>
             <div class="ppgal2-modal-actions">
                 <button type="button" class="button button-primary" id="ppgal2-modal-confirm">Create Posts</button>
                 <button type="button" class="button" id="ppgal2-modal-cancel">Cancel</button>
@@ -1020,8 +1021,12 @@ function ppgal2_render_admin_page() {
                         <td>Title: "Fluffy Boy"</td>
                     </tr>
                     <tr>
-                        <td><code>street__fluffy-boy.jpg</code></td>
-                        <td>Type: Street, Title: "Fluffy Boy"</td>
+                        <td><code>fluffy-boy__yorkie.jpg</code></td>
+                        <td>Title: "Fluffy Boy", Breed: Yorkie</td>
+                    </tr>
+                    <tr>
+                        <td><code>fluffy-boy__yorkie.wip.jpg</code></td>
+                        <td>Title: "Fluffy Boy", Breed: Yorkie, Tags: wip</td>
                     </tr>
                     <tr>
                         <td><code>studio__fluffy-boy__yorkie.wip.adoption.jpg</code></td>
