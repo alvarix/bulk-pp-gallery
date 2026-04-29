@@ -466,7 +466,12 @@ function ppgal2_parse_filename( $filename ) {
  *
  * @param int $attachment_id WordPress attachment ID.
  * @param int $max_px        Maximum pixels on the longest edge.
+
+ this function can be extracted to functions.php to resize all uploads to a max size, discarding the original by hooking to `add_attachment` with whatever max size you want.
+
  */
+
+
 function ppgal2_resize_attachment( $attachment_id, $max_px ) {
     if ( ! $max_px ) {
         return;
