@@ -461,6 +461,45 @@ function ppgal2_parse_filename( $filename ) {
 }
 
 /**
+ * Resize an attachment image in-place to fit within a max dimension.
+ * Overwrites the original file. No-ops if the image is already within bounds.
+ *
+ * @param int $attachment_id WordPress attachment ID.
+ * @param int $max_px        Maximum pixels on the longest edge.
+ */
+function ppgal2_resize_attachment( $attachment_id, $max_px ) {
+    if ( ! $max_px ) {
+        return;
+    }
+
+    $file = get_attached_file( $attachment_id );
+    if ( ! $file || ! file_exists( $file ) ) {
+        return;
+    }
+
+    $mime = get_post_mime_type( $attachment_id );
+    if ( ! in_array( $mime, array( 'image/jpeg', 'image/png', 'image/webp', 'image/gif' ), true ) ) {
+        return;
+    }
+
+    $editor = wp_get_image_editor( $file );
+    if ( is_wp_error( $editor ) ) {
+        return;
+    }
+
+    $size = $editor->get_size();
+    if ( $size['width'] <= $max_px && $size['height'] <= $max_px ) {
+        return;
+    }
+
+    $editor->resize( $max_px, $max_px, false );
+    $editor->save( $file );
+
+    $metadata = wp_generate_attachment_metadata( $attachment_id, $file );
+    wp_update_attachment_metadata( $attachment_id, $metadata );
+}
+
+/**
  * AJAX handler: bulk-create gallery posts from selected media attachments.
  * Parses each filename for type, breed, and tags.
  */
@@ -479,13 +518,16 @@ function ppgal2_ajax_bulk_create() {
         wp_send_json_error( 'No images selected.' );
     }
 
-    $created = 0;
+    $created  = 0;
+    $max_size = (int) get_option( 'ppgal2_max_image_size', 2000 );
 
     foreach ( $attachment_ids as $attachment_id ) {
         $attachment = get_post( $attachment_id );
         if ( ! $attachment || 'attachment' !== $attachment->post_type ) {
             continue;
         }
+
+        ppgal2_resize_attachment( $attachment_id, $max_size );
 
         $filename = pathinfo( get_attached_file( $attachment_id ), PATHINFO_FILENAME );
         $parsed   = ppgal2_parse_filename( $filename );
@@ -884,6 +926,12 @@ function ppgal2_register_settings() {
         'default'           => 'date-desc',
         'sanitize_callback' => 'sanitize_text_field',
     ) );
+
+    register_setting( 'ppgal2_options', 'ppgal2_max_image_size', array(
+        'type'              => 'integer',
+        'default'           => 2000,
+        'sanitize_callback' => 'absint',
+    ) );
 }
 
 /**
@@ -929,6 +977,7 @@ function ppgal2_render_admin_page() {
         update_option( 'ppgal2_include_in_rss', isset( $_POST['ppgal2_include_in_rss'] ) );
         update_option( 'ppgal2_default_type', sanitize_text_field( $_POST['ppgal2_default_type'] ?? '' ) );
         update_option( 'ppgal2_default_sort', sanitize_text_field( $_POST['ppgal2_default_sort'] ?? 'date-desc' ) );
+        update_option( 'ppgal2_max_image_size', absint( $_POST['ppgal2_max_image_size'] ?? 2000 ) );
         echo '<div class="notice notice-success is-dismissible"><p>Settings saved.</p></div>';
     }
 
@@ -1000,6 +1049,15 @@ function ppgal2_render_admin_page() {
                                 <option value="breed-desc" <?php selected( $default_sort, 'breed-desc' ); ?>>Breed Z-A</option>
                             </select>
                             <p class="description">Default sort order when the gallery loads. URL parameter <code>?sort=</code> overrides this.</p>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th scope="row"><label for="ppgal2_max_image_size">Max image size (px)</label></th>
+                        <td>
+                            <input type="number" name="ppgal2_max_image_size" id="ppgal2_max_image_size"
+                                   value="<?php echo esc_attr( get_option( 'ppgal2_max_image_size', 2000 ) ); ?>"
+                                   min="0" max="10000" step="100" class="small-text" />
+                            <p class="description">Resize images to this maximum dimension (longest edge) when creating gallery posts. Set to 0 to disable. Original is overwritten.</p>
                         </td>
                     </tr>
                 </table>
