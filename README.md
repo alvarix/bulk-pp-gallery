@@ -67,6 +67,8 @@ The **Settings & Help** page under PP Gallery Items has two tabs:
 
 Images are resized during gallery import to fit within the configured maximum dimension (longest edge). The original file is overwritten — no copy is kept. Default is 2000px. Set to 0 to disable.
 
+`ppgal2_resize_attachment()` can be extracted to `functions.php` to resize all uploads sitewide by hooking it to `add_attachment` with whatever max size you want.
+
 ## Taxonomies
 
 - **Types** -- hierarchical (e.g. Street, Studio)
