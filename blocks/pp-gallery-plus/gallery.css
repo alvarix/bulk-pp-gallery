@@ -228,6 +228,10 @@
     z-index: 10;
 }
 
+.ppgal2-lightbox-spinner circle {
+    fill: #fff;
+}
+
 /* ---- Responsive ---- */
 
 @media screen and (max-width: 500px) {
