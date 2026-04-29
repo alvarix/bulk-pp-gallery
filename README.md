@@ -69,6 +69,15 @@ Images are resized during gallery import to fit within the configured maximum di
 
 `ppgal2_resize_attachment()` can be extracted to `functions.php` to resize all uploads sitewide by hooking it to `add_attachment` with whatever max size you want.
 
+## Dashboard widgets
+
+Four widgets are added to the WordPress admin homepage automatically when the plugin is active:
+
+- **Recent Imports** -- last 5 gallery posts with thumbnail, type, breed, and date. Thumbnails link to the edit screen.
+- **Stats** -- total post, type, breed, and tag counts at a glance.
+- **By Type** -- horizontal bar chart showing post count per type, each bar links to a filtered list view.
+- **Top Breeds** -- tag cloud of up to 20 breeds, scaled by post count, each linking to a filtered list view.
+
 ## Taxonomies
 
 - **Types** -- hierarchical (e.g. Street, Studio)

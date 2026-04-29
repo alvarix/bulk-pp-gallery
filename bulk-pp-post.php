@@ -1129,3 +1129,143 @@ function ppgal2_render_admin_page() {
     </script>
     <?php
 }
+
+// =========================================================================
+// 12. Dashboard Widgets
+// =========================================================================
+add_action( 'wp_dashboard_setup', 'ppgal2_register_dashboard_widgets' );
+
+/**
+ * Register all PP Gallery dashboard widgets.
+ */
+function ppgal2_register_dashboard_widgets() {
+    wp_add_dashboard_widget( 'ppgal2_recent_imports',   'PP Gallery &mdash; Recent Imports',   'ppgal2_widget_recent_imports' );
+    wp_add_dashboard_widget( 'ppgal2_stats',            'PP Gallery &mdash; Stats',             'ppgal2_widget_stats' );
+    wp_add_dashboard_widget( 'ppgal2_type_breakdown',   'PP Gallery &mdash; By Type',           'ppgal2_widget_type_breakdown' );
+    wp_add_dashboard_widget( 'ppgal2_top_breeds',       'PP Gallery &mdash; Top Breeds',        'ppgal2_widget_top_breeds' );
+}
+
+/**
+ * Widget: last 5 gallery posts with thumbnail, type, breed, and date.
+ */
+function ppgal2_widget_recent_imports() {
+    $posts = get_posts( array(
+        'post_type'      => PPGAL2_CPT,
+        'posts_per_page' => 5,
+        'post_status'    => 'publish',
+        'orderby'        => 'date',
+        'order'          => 'DESC',
+    ) );
+
+    if ( empty( $posts ) ) {
+        echo '<p>No gallery items yet.</p>';
+        return;
+    }
+
+    echo '<ul style="margin:0;padding:0;list-style:none;">';
+    foreach ( $posts as $post ) {
+        $thumb  = get_the_post_thumbnail_url( $post->ID, 'thumbnail' );
+        $types  = get_the_terms( $post->ID, PPGAL2_TAX_TYPE );
+        $breeds = get_the_terms( $post->ID, PPGAL2_TAX_BREED );
+        $meta   = array();
+        if ( $types  && ! is_wp_error( $types ) )  $meta[] = $types[0]->name;
+        if ( $breeds && ! is_wp_error( $breeds ) )  $meta[] = implode( ', ', wp_list_pluck( $breeds, 'name' ) );
+
+        echo '<li style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">';
+        if ( $thumb ) {
+            echo '<img src="' . esc_url( $thumb ) . '" style="width:40px;height:40px;object-fit:cover;border-radius:3px;flex-shrink:0;" />';
+        }
+        echo '<div>';
+        echo '<a href="' . esc_url( get_edit_post_link( $post->ID ) ) . '">' . esc_html( $post->post_title ) . '</a>';
+        if ( $meta ) echo '<br><small style="color:#888;">' . esc_html( implode( ' &middot; ', $meta ) ) . '</small>';
+        echo '<br><small style="color:#bbb;">' . esc_html( get_the_date( 'M j, Y', $post ) ) . '</small>';
+        echo '</div></li>';
+    }
+    echo '</ul>';
+    echo '<p style="margin:8px 0 0;"><a href="' . esc_url( admin_url( 'edit.php?post_type=' . PPGAL2_CPT ) ) . '">View all &rarr;</a></p>';
+}
+
+/**
+ * Widget: totals for posts, types, breeds, and tags.
+ */
+function ppgal2_widget_stats() {
+    $post_count  = wp_count_posts( PPGAL2_CPT )->publish;
+    $type_count  = wp_count_terms( array( 'taxonomy' => PPGAL2_TAX_TYPE ) );
+    $breed_count = wp_count_terms( array( 'taxonomy' => PPGAL2_TAX_BREED ) );
+    $tag_count   = wp_count_terms( array( 'taxonomy' => PPGAL2_TAX_TAG ) );
+
+    $stats = array(
+        'Posts'  => (int) $post_count,
+        'Types'  => is_wp_error( $type_count )  ? 0 : (int) $type_count,
+        'Breeds' => is_wp_error( $breed_count ) ? 0 : (int) $breed_count,
+        'Tags'   => is_wp_error( $tag_count )   ? 0 : (int) $tag_count,
+    );
+
+    echo '<div style="display:flex;gap:12px;flex-wrap:wrap;">';
+    foreach ( $stats as $label => $count ) {
+        echo '<div style="text-align:center;flex:1;min-width:60px;">';
+        echo '<div style="font-size:26px;font-weight:600;line-height:1;">' . esc_html( $count ) . '</div>';
+        echo '<div style="font-size:11px;color:#888;text-transform:uppercase;letter-spacing:.5px;margin-top:2px;">' . esc_html( $label ) . '</div>';
+        echo '</div>';
+    }
+    echo '</div>';
+}
+
+/**
+ * Widget: horizontal bar chart of post count per type.
+ */
+function ppgal2_widget_type_breakdown() {
+    $types = get_terms( array(
+        'taxonomy'   => PPGAL2_TAX_TYPE,
+        'hide_empty' => false,
+        'orderby'    => 'count',
+        'order'      => 'DESC',
+    ) );
+
+    if ( empty( $types ) || is_wp_error( $types ) ) {
+        echo '<p>No types yet.</p>';
+        return;
+    }
+
+    $max = max( 1, $types[0]->count );
+
+    echo '<table style="width:100%;border-collapse:collapse;">';
+    foreach ( $types as $term ) {
+        $pct = round( ( $term->count / $max ) * 100 );
+        $url = admin_url( 'edit.php?post_type=' . PPGAL2_CPT . '&' . PPGAL2_TAX_TYPE . '=' . $term->slug );
+        echo '<tr>';
+        echo '<td style="width:80px;padding:3px 8px 3px 0;white-space:nowrap;"><a href="' . esc_url( $url ) . '">' . esc_html( $term->name ) . '</a></td>';
+        echo '<td style="padding:3px 0;"><div style="background:#e0e0e0;border-radius:3px;"><div style="background:#2271b1;width:' . $pct . '%;height:16px;border-radius:3px;min-width:4px;"></div></div></td>';
+        echo '<td style="width:30px;text-align:right;padding:3px 0 3px 8px;color:#888;font-size:12px;">' . esc_html( $term->count ) . '</td>';
+        echo '</tr>';
+    }
+    echo '</table>';
+}
+
+/**
+ * Widget: tag cloud of top 20 breeds scaled by post count.
+ */
+function ppgal2_widget_top_breeds() {
+    $breeds = get_terms( array(
+        'taxonomy'   => PPGAL2_TAX_BREED,
+        'hide_empty' => true,
+        'orderby'    => 'count',
+        'order'      => 'DESC',
+        'number'     => 20,
+    ) );
+
+    if ( empty( $breeds ) || is_wp_error( $breeds ) ) {
+        echo '<p>No breeds yet.</p>';
+        return;
+    }
+
+    $max = max( 1, $breeds[0]->count );
+
+    echo '<div style="line-height:2.2;">';
+    foreach ( $breeds as $breed ) {
+        $size = 11 + round( ( $breed->count / $max ) * 9 );
+        $url  = admin_url( 'edit.php?post_type=' . PPGAL2_CPT . '&' . PPGAL2_TAX_BREED . '=' . $breed->slug );
+        echo '<a href="' . esc_url( $url ) . '" style="font-size:' . $size . 'px;margin-right:8px;text-decoration:none;" title="' . esc_attr( $breed->count ) . ' posts">' . esc_html( $breed->name ) . '</a> ';
+    }
+    echo '</div>';
+}
