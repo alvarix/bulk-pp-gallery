@@ -77,6 +77,8 @@ Four widgets are added to the WordPress admin homepage automatically when the pl
 - **Stats** -- total post, type, breed, and tag counts at a glance.
 - **By Type** -- horizontal bar chart showing post count per type, each bar links to a filtered list view.
 - **Top Breeds** -- tag cloud of up to 20 breeds, scaled by post count, each linking to a filtered list view.
+- **Import Activity** -- bar chart of posts created per month over the last 12 months.
+- **Duplicate Titles** -- lists any posts sharing an identical title, with a count and a link to the search results. Shows a green check when none exist.
 
 ## Taxonomies
 

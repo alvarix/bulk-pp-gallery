@@ -1139,10 +1139,12 @@ add_action( 'wp_dashboard_setup', 'ppgal2_register_dashboard_widgets' );
  * Register all PP Gallery dashboard widgets.
  */
 function ppgal2_register_dashboard_widgets() {
-    wp_add_dashboard_widget( 'ppgal2_recent_imports',   'PP Gallery &mdash; Recent Imports',   'ppgal2_widget_recent_imports' );
-    wp_add_dashboard_widget( 'ppgal2_stats',            'PP Gallery &mdash; Stats',             'ppgal2_widget_stats' );
-    wp_add_dashboard_widget( 'ppgal2_type_breakdown',   'PP Gallery &mdash; By Type',           'ppgal2_widget_type_breakdown' );
-    wp_add_dashboard_widget( 'ppgal2_top_breeds',       'PP Gallery &mdash; Top Breeds',        'ppgal2_widget_top_breeds' );
+    wp_add_dashboard_widget( 'ppgal2_recent_imports',   'PP Gallery &mdash; Recent Imports',     'ppgal2_widget_recent_imports' );
+    wp_add_dashboard_widget( 'ppgal2_stats',            'PP Gallery &mdash; Stats',               'ppgal2_widget_stats' );
+    wp_add_dashboard_widget( 'ppgal2_type_breakdown',   'PP Gallery &mdash; By Type',             'ppgal2_widget_type_breakdown' );
+    wp_add_dashboard_widget( 'ppgal2_top_breeds',       'PP Gallery &mdash; Top Breeds',          'ppgal2_widget_top_breeds' );
+    wp_add_dashboard_widget( 'ppgal2_import_activity',  'PP Gallery &mdash; Import Activity',     'ppgal2_widget_import_activity' );
+    wp_add_dashboard_widget( 'ppgal2_duplicates',       'PP Gallery &mdash; Duplicate Titles',    'ppgal2_widget_duplicates' );
 }
 
 /**
@@ -1268,4 +1270,75 @@ function ppgal2_widget_top_breeds() {
         echo '<a href="' . esc_url( $url ) . '" style="font-size:' . $size . 'px;margin-right:8px;text-decoration:none;" title="' . esc_attr( $breed->count ) . ' posts">' . esc_html( $breed->name ) . '</a> ';
     }
     echo '</div>';
+}
+
+/**
+ * Widget: posts created per month for the last 12 months, as a bar chart.
+ */
+function ppgal2_widget_import_activity() {
+    global $wpdb;
+
+    $rows = $wpdb->get_results( $wpdb->prepare(
+        "SELECT DATE_FORMAT(post_date, '%%Y-%%m') AS month, COUNT(*) AS total
+         FROM {$wpdb->posts}
+         WHERE post_type = %s AND post_status = 'publish'
+           AND post_date >= DATE_SUB(NOW(), INTERVAL 12 MONTH)
+         GROUP BY month
+         ORDER BY month ASC",
+        PPGAL2_CPT
+    ) );
+
+    if ( empty( $rows ) ) {
+        echo '<p>No posts in the last 12 months.</p>';
+        return;
+    }
+
+    $max = max( 1, max( array_column( (array) $rows, 'total' ) ) );
+
+    echo '<div style="display:flex;align-items:flex-end;gap:4px;height:60px;margin-bottom:6px;">';
+    foreach ( $rows as $row ) {
+        $pct   = round( ( $row->total / $max ) * 100 );
+        $label = date( 'M', strtotime( $row->month . '-01' ) );
+        echo '<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px;">';
+        echo '<div title="' . esc_attr( $row->total ) . '" style="width:100%;background:#2271b1;height:' . $pct . '%;border-radius:2px 2px 0 0;min-height:2px;"></div>';
+        echo '<div style="font-size:9px;color:#888;white-space:nowrap;">' . esc_html( $label ) . '</div>';
+        echo '</div>';
+    }
+    echo '</div>';
+
+    $total = array_sum( array_column( (array) $rows, 'total' ) );
+    echo '<p style="margin:0;font-size:12px;color:#888;">' . esc_html( $total ) . ' posts added in the last 12 months.</p>';
+}
+
+/**
+ * Widget: gallery posts that share an identical title.
+ */
+function ppgal2_widget_duplicates() {
+    global $wpdb;
+
+    $dupes = $wpdb->get_results( $wpdb->prepare(
+        "SELECT post_title, COUNT(*) AS total
+         FROM {$wpdb->posts}
+         WHERE post_type = %s AND post_status = 'publish'
+         GROUP BY post_title
+         HAVING total > 1
+         ORDER BY total DESC
+         LIMIT 20",
+        PPGAL2_CPT
+    ) );
+
+    if ( empty( $dupes ) ) {
+        echo '<p style="color:#46b450;">&#10003; No duplicate titles found.</p>';
+        return;
+    }
+
+    echo '<table style="width:100%;border-collapse:collapse;">';
+    foreach ( $dupes as $row ) {
+        $url = admin_url( 'edit.php?post_type=' . PPGAL2_CPT . '&s=' . urlencode( $row->post_title ) );
+        echo '<tr>';
+        echo '<td style="padding:3px 8px 3px 0;"><a href="' . esc_url( $url ) . '">' . esc_html( $row->post_title ) . '</a></td>';
+        echo '<td style="text-align:right;color:#d63638;font-weight:600;white-space:nowrap;">' . esc_html( $row->total ) . 'x</td>';
+        echo '</tr>';
+    }
+    echo '</table>';
 }
