@@ -60,8 +60,12 @@ define( 'PPGAL2_TAX_TAG',   'ppgal2_tag' );    // Tag taxonomy
 
 The **Settings & Help** page under PP Gallery Items has two tabs:
 
-- **Settings** -- posts per page (overridable per-block), RSS feed inclusion toggle, default type filter, and default sort order.
+- **Settings** -- posts per page (overridable per-block), RSS feed inclusion toggle, default type filter, default sort order, and max image size for import resizing.
 - **Help** -- filename convention reference and usage instructions.
+
+### Max image size
+
+Images are resized during gallery import to fit within the configured maximum dimension (longest edge). The original file is overwritten — no copy is kept. Default is 2000px. Set to 0 to disable.
 
 ## Taxonomies
 
