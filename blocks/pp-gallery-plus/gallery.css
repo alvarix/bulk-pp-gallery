@@ -226,10 +226,9 @@
     left: 50%;
     transform: translate(-50%, -50%);
     z-index: 10;
-}
-
-.ppgal2-lightbox-spinner circle {
-    fill: #fff;
+    background: #fff;
+    border-radius: 20px;
+    padding: 10px 14px;
 }
 
 /* ---- Responsive ---- */
