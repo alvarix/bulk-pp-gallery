@@ -1,6 +1,8 @@
-# Bulk PP Post
+# WP Bulk Image Gallery
 
 A WordPress plugin for bulk-generating gallery posts from media library images, with automatic metadata parsing from filenames. Includes a filterable gallery block with lightbox and infinite scroll.
+
+> **Use-case note:** This plugin was built for a specific pet photography workflow. The taxonomies (Type, Breed, Gallery Tags), filename parsing conventions, and admin labels ("PP Gallery Items", "ppgal2") all reflect that context. Adapting it to another domain means renaming these constants and labels at the top of `bulk-pp-post.php`. The bulk import, block, and RSS machinery are generic and reusable as-is.
 
 ## What it does
 
@@ -18,6 +20,8 @@ type__title__breed1_breed2.tag1.tag2.ext     -> Type + Title + Multiple Breeds +
 Segment delimiter is `__` (double underscore) — WordPress strips `--` on upload so it can't be used. One `__` means title + breed slot; two `__` adds a type prefix. Use `_` inside the breed segment to assign multiple breeds, and `-` for spaces within a name. WordPress also strips `+` on upload.
 
 WordPress-appended suffixes like `-scaled` and `-rotated` are stripped before parsing.
+
+> **Use-case note:** The two-level filename convention (type + breed + tags) was designed around pet photography categories. For a general-purpose gallery you might only need one level of taxonomy, or none at all — the importer will still create posts from filenames that don't match any pattern.
 
 Examples:
 
@@ -50,10 +54,12 @@ define( 'PPGAL2_TAX_BREED', 'ppgal2_breed' );  // Breed taxonomy
 define( 'PPGAL2_TAX_TAG',   'ppgal2_tag' );    // Tag taxonomy
 ```
 
+> **Use-case note:** These slugs and all admin-facing labels ("PP Gallery Items", "Breeds", "Types") are hardcoded to the original domain. A fork for a different gallery type would change these constants and the label strings in `ppgal2_register_cpt()`, `ppgal2_register_taxonomies()`, and the settings page.
+
 ## Installation
 
 1. Copy the `bulk-pp-gallery/` folder into `wp-content/plugins/`
-2. Activate **Bulk PP Post** from the WordPress admin
+2. Activate **WP Bulk Image Gallery** from the WordPress admin
 3. Go to **Settings > Permalinks** and click Save to flush rewrite rules
 
 ## Settings
@@ -79,6 +85,8 @@ Four widgets are added to the WordPress admin homepage automatically when the pl
 - **Top Breeds** -- tag cloud of up to 20 breeds, scaled by post count, each linking to a filtered list view.
 - **Import Activity** -- bar chart of posts created per month over the last 12 months.
 - **Duplicate Titles** -- lists any posts sharing an identical title, with a count and a link to the search results. Shows a green check when none exist.
+
+> **Use-case note:** "Top Breeds" and "By Type" are named for the pet photography domain. The underlying logic is generic (term cloud + bar chart by taxonomy), but the labels are hardcoded.
 
 ## Taxonomies
 
@@ -126,9 +134,13 @@ Each gallery post has an optional alternate thumbnail, managed via a meta box in
 2. **Per post** -- upload an alternate image via the meta box
 3. **Per post override** -- "Don't use alternate thumbnail" checkbox disables it for that post
 
+> **Use-case note:** Alternate thumbnails were added to show a different crop or angle for the same subject without creating a separate post. A general gallery might not need this feature.
+
 ## RSS
 
 Gallery items are included in the site's main RSS feed by default. This can be toggled off in **Settings & Help > Settings**.
+
+Each feed item's featured image is prepended to the content and excerpt so it appears in readers and aggregators. This is handled by `ppgal2_featured_image_in_feed()` which hooks `the_content_feed` and `the_excerpt_rss`.
 
 ## File structure
 

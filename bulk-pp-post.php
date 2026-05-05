@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Bulk PP Post
+ * Plugin Name: WP Bulk Image Gallery
  * Description: Bulk-generate gallery posts from media library images with auto-parsed metadata. Includes a filterable gallery block with lightbox and infinite scroll.
  * Version: 2.0.0
  * Author: Alvar
@@ -877,6 +877,22 @@ function ppgal2_add_to_rss( $query ) {
         $query->set( 'post_type', array_merge( (array) $existing, array( PPGAL2_CPT ) ) );
     }
 }
+
+/**
+ * Prepend the featured image to RSS feed content and excerpts.
+ *
+ * @param string $content The feed item content.
+ * @return string
+ */
+function ppgal2_featured_image_in_feed( $content ) {
+    global $post;
+    if ( has_post_thumbnail( $post->ID ) ) {
+        $content = get_the_post_thumbnail( $post->ID, 'full' ) . $content;
+    }
+    return $content;
+}
+add_filter( 'the_content_feed', 'ppgal2_featured_image_in_feed' );
+add_filter( 'the_excerpt_rss',  'ppgal2_featured_image_in_feed' );
 
 // =========================================================================
 // 9. Plugin action links
